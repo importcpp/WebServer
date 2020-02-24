@@ -1,0 +1,27 @@
+{
+    "tasks": [
+        {
+            "type": "shell",
+            "label": "g++ build active file",
+            "command": "/usr/bin/g++",
+            "args": [
+                "-I .",
+                "-g",
+                "-std=c++11",
+                "${file}",
+                "${workspaceFolder}/hpserver/KInetAddress.cpp",
+                "${workspaceFolder}/hpserver/KSocket.cpp",
+                "${workspaceFolder}/hpserver/KBuffer.cpp",
+                
+                "${workspaceFolder}/thread/KThreadPool.cpp",                
+                "-o",
+                "${fileDirname}/${fileBasenameNoExtension}",
+                "-lpthread",
+            ],
+            "options": {
+                "cwd": "/usr/bin"
+            }
+        }
+    ],
+    "version": "2.0.0"
+}

@@ -7,8 +7,7 @@
 #include <mutex>
 #include <condition_variable>
 
-namespace kb
-{
+
 class ThreadPool
 {
 public:
@@ -39,4 +38,3 @@ private:
     // 可以作为线程池标识
     std::string name_;
 };
-} // namespace kb

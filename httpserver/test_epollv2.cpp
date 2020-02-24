@@ -1,6 +1,6 @@
+// 将client端的IO事件交由线程池来处理
 #include <iostream>
 #include <functional>
-
 #include "hpserver/KInetAddress.h"
 #include "hpserver/KSocket.h"
 #include "hpserver/KBuffer.h"
@@ -107,9 +107,6 @@ int main()
                 else if (events[i].data.fd >= 0 && events[i].data.fd == clntfd)
                 {
                     pool.run(std::bind(httpOnRequest, epfd, clntfd));
-                    // 让新的线程处理读取 然后在 response
-                    // 版本一设定： 每次触发就是当作一个短期task，执行玩后就退出
-                    // 版本二设定： 利用map 来维护fd和thread的对应关系，thread只有在fd销毁时才算完成任务，否则一直等待
                 }
             }
         }

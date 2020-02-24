@@ -1,8 +1,6 @@
 #include "KThreadPool.h"
 #include "assert.h"
 
-using namespace kb;
-
 ThreadPool::ThreadPool(const std::string &name)
     : name_(name),
       running_(false)

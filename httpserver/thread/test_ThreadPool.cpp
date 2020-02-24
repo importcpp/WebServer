@@ -2,7 +2,6 @@
 #include <iostream>
 #include <chrono>
 
-using namespace kb;
 
 void print()
 {

@@ -12,11 +12,11 @@
                 "${workspaceFolder}/hpserver/KInetAddress.cpp",
                 "${workspaceFolder}/hpserver/KSocket.cpp",
                 "${workspaceFolder}/hpserver/KBuffer.cpp",
-                
-                "${workspaceFolder}/thread/KThreadPool.cpp",                
+                "${workspaceFolder}/utils/KTimestamp.cpp",
+                "${workspaceFolder}/thread/KThreadPool.cpp",
                 "-o",
                 "${fileDirname}/${fileBasenameNoExtension}",
-                "-lpthread",
+                "-lpthread"
             ],
             "options": {
                 "cwd": "/usr/bin"

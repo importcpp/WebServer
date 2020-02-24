@@ -14,6 +14,11 @@
                 "${workspaceFolder}/hpserver/KBuffer.cpp",
                 "${workspaceFolder}/utils/KTimestamp.cpp",
                 "${workspaceFolder}/thread/KThreadPool.cpp",
+
+                // http
+                "${workspaceFolder}/http/KHttpResponse.cpp",
+                "${workspaceFolder}/http/KHttpContext.cpp",
+
                 "-o",
                 "${fileDirname}/${fileBasenameNoExtension}",
                 "-lpthread"

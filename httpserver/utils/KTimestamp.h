@@ -113,4 +113,4 @@ inline Timestamp addTime(Timestamp timestamp, double seconds)
     return Timestamp(timestamp.microSecondsSinceEpoch() + delta);
 }
 
-} // namespace kback
+} // namespace kb

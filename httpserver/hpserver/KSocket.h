@@ -4,10 +4,12 @@
 #include <netinet/in.h>
 #include <sys/socket.h>
 
-
+#include <fcntl.h>
 
 namespace kb
 {
+
+void setNonBlockAndCloseOnExec(int sockfd);
     
 int createTcpSocket();
 

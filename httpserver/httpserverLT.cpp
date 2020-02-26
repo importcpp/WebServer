@@ -20,17 +20,11 @@
 
 #include "utils/KIcon.h"
 
-// add timer
-#include "utils/KTimestamp.h"
-#include "hpserver/KLstTimer2.h"
-
 using namespace kb;
 
 /// Http server 版本-1 using LT ///
 
 const int timeoutMs = 5000;
-
-static sort_time_lst timer_lst;
 
 void selectResponse(const HttpRequest &req, HttpResponse *resp)
 {
@@ -130,20 +124,8 @@ void httpOnRequest(int epfd, int clntfd)
     }
 }
 
-
-// 定时器回调函数，它删除非活动连接socket上的注册事件，并关闭之
-void cb_func(int epfd, int clntfd)
-{
-    epoll_ctl(epfd, EPOLL_CTL_DEL, clntfd, 0);
-    close(clntfd);
-    printf("close fd %d\n", clntfd);
-}
-
 int main()
 {
-
-    // 创建Timerfd用于处理定时任务
-    int timerfd = createTcpSocket();
 
     // 添加线程池 来处理http请求
     ThreadPool pool("Test");
@@ -170,13 +152,6 @@ int main()
     event.data.fd = sockfd;
     event.events = EPOLLIN;
     if (::epoll_ctl(epfd, EPOLL_CTL_ADD, sockfd, &event) < 0)
-    {
-        std::cerr << "epoll_ctl error" << std::endl;
-    }
-
-    event.data.fd = timerfd;
-    event.events = EPOLLIN;
-    if (::epoll_ctl(epfd, EPOLL_CTL_ADD, timerfd, &event) < 0)
     {
         std::cerr << "epoll_ctl error" << std::endl;
     }
@@ -210,14 +185,6 @@ int main()
                         std::cerr << "epoll_ctl error" << std::endl;
                     }
                     std::cout << "connect client " << clntfd << std::endl;
-                    
-                    /// 添加定时器
-                    util_timer *timer = new util_timer;
-                    timer->cb_func = std::bind(cb_func, epfd, clntfd);
-                    time_t cur = time(nullptr);
-                    timer->expire = cur + NUMBER_TIME * TIMESLOT;
-                    timer_lst.add_timer(timer);
-                    resetTimerfd(timerfd, Timestamp(NUMBER_TIME * TIMESLOT * 1000000));
                 }
                 else if (events[i].data.fd >= 0 && events[i].data.fd == clntfd)
                 {
@@ -227,12 +194,6 @@ int main()
                     // 让新的线程处理读取 然后在 response
                     // 版本一设定： 每次触发就是当作一个短期task，执行玩后就退出
                     // 版本二设定： 利用map 来维护fd和thread的对应关系，thread只有在fd销毁时才算完成任务，否则一直等待
-                }
-                else if (events[i].data.fd == timerfd)
-                {
-                    Timestamp now(Timestamp::now());
-                    readTimerfd(timerfd, now);
-                    timer_lst.tick();
                 }
             }
         }

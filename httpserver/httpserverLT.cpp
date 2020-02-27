@@ -186,14 +186,10 @@ int main()
                     }
                     std::cout << "connect client " << clntfd << std::endl;
                 }
-                else if (events[i].data.fd >= 0 && events[i].data.fd == clntfd)
+                else if (events[i].data.fd >= 0)
                 {
                     std::cout << "assign task to client " << clntfd << std::endl;
-                    pool.run(std::bind(httpOnRequest, epfd, clntfd));
-                    // httpOnRequest(epfd, clntfd);
-                    // 让新的线程处理读取 然后在 response
-                    // 版本一设定： 每次触发就是当作一个短期task，执行玩后就退出
-                    // 版本二设定： 利用map 来维护fd和thread的对应关系，thread只有在fd销毁时才算完成任务，否则一直等待
+                    httpOnRequest(epfd, events[i].data.fd);
                 }
             }
         }

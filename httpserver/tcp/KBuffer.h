@@ -1,14 +1,14 @@
 #pragma once
-#include "../utils/Kcopyable.h"
 
 #include <algorithm>
 #include <string>
 #include <vector>
-
 #include <assert.h>
+#include "../utils/Kcopyable.h"
+
 //#include <unistd.h>  // ssize_t
 
-namespace kb
+namespace kback
 {
 
 /// A buffer class modeled after org.jboss.netty.buffer.ChannelBuffer
@@ -21,7 +21,7 @@ namespace kb
 /// |                   |                  |                  |
 /// 0      <=      readerIndex   <=   writerIndex    <=     size
 /// @endcode
-class Buffer : public kb::copyable
+class Buffer : public kback::copyable
 {
 public:
     static const size_t kCheapPrepend = 8;
@@ -214,4 +214,4 @@ private:
     static const char kCRLF[];
 };
 
-} // namespace kb
+} // namespace kback

@@ -9,15 +9,29 @@
                 "-g",
                 "-std=c++11",
                 "${file}",
-                "${workspaceFolder}/hpserver/KInetAddress.cpp",
-                "${workspaceFolder}/hpserver/KSocket.cpp",
-                "${workspaceFolder}/hpserver/KBuffer.cpp",
+                "${workspaceFolder}/KEventLoop.cpp",
+                "${workspaceFolder}/poller/KChannel.cpp",
+                "${workspaceFolder}/poller/KPoller.cpp",
+
+                // abstract base class
+                "${workspaceFolder}/poller/KPollPoller.cpp",
+                "${workspaceFolder}/poller/KEPollPoller.cpp",
+
                 "${workspaceFolder}/utils/KTimestamp.cpp",
-                "${workspaceFolder}/thread/KThreadPool.cpp",
+
+                "${workspaceFolder}/tcp/KSocket.cpp",
+                "${workspaceFolder}/tcp/KSocketsOps.cpp",
+                "${workspaceFolder}/tcp/KInetAddress.cpp",
+                "${workspaceFolder}/tcp/KAcceptor.cpp",
+
+                "${workspaceFolder}/tcp/KTcpServer.cpp",
+                "${workspaceFolder}/tcp/KTcpConnection.cpp",
+                "${workspaceFolder}/tcp/KBuffer.cpp",
 
                 // http
                 "${workspaceFolder}/http/KHttpResponse.cpp",
                 "${workspaceFolder}/http/KHttpContext.cpp",
+                "${workspaceFolder}/http/KHttpServer.cpp",
 
                 "-o",
                 "${fileDirname}/${fileBasenameNoExtension}",

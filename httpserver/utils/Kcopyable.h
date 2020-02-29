@@ -1,6 +1,6 @@
 #pragma once
 
-namespace kb
+namespace kback
 {
 class copyable
 {
@@ -8,4 +8,4 @@ protected:
     copyable() = default;
     ~copyable() = default;
 };
-} // namespace kb
+} // namespace kback

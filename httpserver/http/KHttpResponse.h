@@ -3,7 +3,7 @@
 
 #include <map>
 
-namespace kb
+namespace kback
 {
 
 class Buffer;
@@ -72,4 +72,4 @@ private:
     string body_;
 };
 
-} // namespace kb
+} // namespace kback

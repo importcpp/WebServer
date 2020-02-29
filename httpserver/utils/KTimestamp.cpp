@@ -9,9 +9,9 @@
 
 #include <inttypes.h>
 
-using namespace kb;
+using namespace kback;
 
-// static_assert(sizeof(Timestamp) == sizeof(int64_t), "Timestamp is same size as int64_t");
+static_assert(sizeof(Timestamp) == sizeof(int64_t), "Timestamp is same size as int64_t");
 
 string Timestamp::toString() const
 {

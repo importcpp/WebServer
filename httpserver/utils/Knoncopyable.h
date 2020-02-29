@@ -1,6 +1,6 @@
 #pragma once
 
-namespace kb
+namespace kback
 {
 class noncopyable
 {
@@ -13,4 +13,4 @@ protected:
     ~noncopyable() = default;
 };
 
-} // namespace kb
+} // namespace kback

@@ -16,7 +16,7 @@
 ///
 /// The most common stuffs.
 ///
-namespace kb
+namespace kback
 {
 
 template <typename T>
@@ -145,4 +145,4 @@ inline To down_cast(From *f)          // so we only accept pointers
     return static_cast<To>(f);
 }
 
-} // namespace kb
+} // namespace kback

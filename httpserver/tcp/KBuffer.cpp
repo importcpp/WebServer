@@ -1,12 +1,12 @@
 #include "KBuffer.h"
-// #include "KSocketsOps.h"
+#include "KSocketsOps.h"
 // #include "logging/KLogging.h"
 #include "../utils/KTypes.h"
 #include <errno.h>
 #include <memory.h>
 #include <sys/uio.h>
 
-using namespace kb;
+using namespace kback;
 
 const char Buffer::kCRLF[] = "\r\n"; // 回车换行
 

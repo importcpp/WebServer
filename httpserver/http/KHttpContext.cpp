@@ -1,7 +1,7 @@
-#include "../hpserver/KBuffer.h"
+#include "../tcp/KBuffer.h"
 #include "KHttpContext.h"
 
-using namespace kb;
+using namespace kback;
 
 bool HttpContext::processRequestLine(const char *begin, const char *end)
 {

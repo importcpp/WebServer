@@ -4,7 +4,7 @@
 
 // 一个用于解析Http内容的类
 
-namespace kb
+namespace kback
 {
 
 class Buffer;

@@ -7,7 +7,7 @@
 #include <assert.h>
 #include <stdio.h>
 
-namespace kb
+namespace kback
 {
 
 class HttpRequest : public copyable
@@ -188,4 +188,4 @@ private:
     std::map<string, string> headers_;
 };
 
-} // namespace kb
+} // namespace kback

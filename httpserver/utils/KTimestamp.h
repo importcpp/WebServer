@@ -4,7 +4,7 @@
 
 #include <boost/operators.hpp>
 
-namespace kb
+namespace kback
 {
 
 ///
@@ -113,4 +113,4 @@ inline Timestamp addTime(Timestamp timestamp, double seconds)
     return Timestamp(timestamp.microSecondsSinceEpoch() + delta);
 }
 
-} // namespace kb
+} // namespace kback

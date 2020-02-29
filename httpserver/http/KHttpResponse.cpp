@@ -1,9 +1,9 @@
 #include "KHttpResponse.h"
-#include "../hpserver/KBuffer.h"
+#include "../tcp/KBuffer.h"
 
 #include <stdio.h>
 
-using namespace kb;
+using namespace kback;
 
 void HttpResponse::appendToBuffer(Buffer *output) const
 {

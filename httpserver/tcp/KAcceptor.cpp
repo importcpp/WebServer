@@ -51,6 +51,7 @@ void Acceptor::handleRead()
     // 利用一个 InetAddress 来管理 sockaddr_in
     InetAddress peerAddr(0);
     // loop until no more
+    // 这里是需要使用非阻塞IO的原因之一，即使没有连接到套接字，也应立即返回
     int connfd = acceptSocket_.accept(&peerAddr);
     if (connfd >= 0)
     {

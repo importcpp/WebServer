@@ -15,8 +15,11 @@ class Channel;
 class EventLoop;
 class Socket;
 
-// Tcp connection是唯一默认使用shared_ptr来管理的class, 也是唯一继承enable_shared_from_this的calss
-// ??? 这源于其模糊的生命期
+// Tcp connection是唯一默认使用shared_ptr来管理的class, 也是唯一继承enable_shared_from_this的class
+// 之所以要用shared_ptr是因为 tcpconnention的析构是由TcpServer来间接管理的，
+// 也就是说tcpconnection被tcpserver所持有，
+// 如果tcpconnection自己析构了而tcpserver不知道，将引发程序未定义的行为
+// 所有用shared_ptr进行管理，使用引用计数功能，当引用计数为0时，即是最合理的析构的时刻
 class TcpConnection : noncopyable,
                       public std::enable_shared_from_this<TcpConnection>
 {

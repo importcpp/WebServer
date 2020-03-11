@@ -95,6 +95,9 @@ void TcpServer::removeConnectionInLoop(const TcpConnectionPtr &conn)
     std::cout << "LOG_INFO:   "
               << "TcpServer::removeConnection [" << name_
               << "] - connection " << conn->name() << std::endl;
+    // 此时，conn 对象被其本身还有 connections_ 对象持有，
+    // 当把conn从 connections_ 中移除时引用计数降到1, 不做处理的话，离开作用域后就会被销毁
+    // 最后使用了 std::bind 让TcpConnection的生命期延长到connectDestroyed 调用完成时
     size_t n = connections_.erase(conn->name());
     assert(n == 1);
     (void)n;

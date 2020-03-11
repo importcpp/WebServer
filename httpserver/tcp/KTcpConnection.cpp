@@ -162,6 +162,7 @@ void TcpConnection::connectDestroyed()
     channel_->disableAll();
     connectionCallback_(shared_from_this());
 
+    // 移除poller对channel_指针的管理
     loop_->removeChannel(get_pointer(channel_));
 }
 

@@ -14,7 +14,8 @@ class Acceptor;
 class EventLoop;
 class EventLoopThreadPool;
 
-// TcpServer class 的功能是管理accept 获得的TcpConnection
+// TcpServer class 的 主要用于负责Tcp连接的建立、维护以及销毁
+// 它管理Acceptor类获得tcp连接，进而建立TcpConnection类管理tcp连接
 class TcpServer : noncopyable
 {
 public:

@@ -70,7 +70,8 @@ private:
     typedef std::vector<Channel*> ChannelList;
     ChannelList activeChannels_;
 
-    // ??? 为什么要用unique_ptr
+    // 用unique_ptr自动管理指向Poller的指针
+    // 不需要担心poller_的销毁问题
     std::unique_ptr<Poller> poller_;
 
     bool quit_; // atomic

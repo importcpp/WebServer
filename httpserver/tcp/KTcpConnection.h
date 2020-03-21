@@ -78,12 +78,13 @@ public:
         closeCallback_ = cb;
     }
 
-    // called when TcpServer accepts a new connection
-    void connectEstablished(); // should be called only once
-    // called when TcpServer has removed me from its map
-    void connectDestroyed(); // should be called only once
+    // 只在TcpServer接受新连接的时候调用
+    void connectEstablished();
+    // 只在TcpServer移除连接的时候调用
+    void connectDestroyed(); 
 
 private:
+    // 通过状态机来表示tcp的连接状态 
     enum StateE
     {
         kConnecting,

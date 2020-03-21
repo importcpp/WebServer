@@ -164,11 +164,11 @@ public:
         buf.swap(buffer_);
     }
 
-    /// Read data directly into buffer.
-    ///
-    /// It may implement with readv(2)
-    /// @return result of read(2), @c errno is saved
+    /// 将数据读入buffer, 适合LT
     ssize_t readFd(int fd, int *savedErrno);
+
+    /// 将数据读入buffer, 适合ET
+    ssize_t readFdET(int fd, int *savedErrno);
 
 private:
     char *begin()

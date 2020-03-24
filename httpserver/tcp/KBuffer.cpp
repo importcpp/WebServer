@@ -67,6 +67,7 @@ ssize_t Buffer::readFdET(int fd, int *savedErrno)
                 *savedErrno = errno;
                 break;
             }
+            return -1;
         }
         else if (implicit_cast<size_t>(n) <= writable)
         {
@@ -84,5 +85,7 @@ ssize_t Buffer::readFdET(int fd, int *savedErrno)
         writable = writableBytes();
         vec[0].iov_base = begin() + writerIndex_;
         vec[0].iov_len = writable;
+        readLen += n;
     }
+    return readLen;
 }

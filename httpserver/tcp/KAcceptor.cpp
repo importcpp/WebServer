@@ -48,20 +48,31 @@ void Acceptor::listen()
 void Acceptor::handleRead()
 {
     loop_->assertInLoopThread();
-    // 利用一个 InetAddress 来管理 sockaddr_in
-    InetAddress peerAddr(0);
-    // loop until no more
-    // 这里是需要使用非阻塞IO的原因之一，即使没有连接到套接字，也应立即返回
-    int connfd = acceptSocket_.accept(&peerAddr);
-    if (connfd >= 0)
+
+    for(;;)
     {
-        if (newConnectionCallback_)
+        // 利用一个 InetAddress 来管理 sockaddr_in
+        InetAddress peerAddr(0);
+        // 这里是需要使用非阻塞IO的原因之一，即使没有连接到套接字，也应立即返回
+        int connfd = acceptSocket_.accept(&peerAddr);
+        if (connfd >= 0)
         {
-            newConnectionCallback_(connfd, peerAddr);
+            if (newConnectionCallback_)
+            {
+                newConnectionCallback_(connfd, peerAddr);
+            }
+            else
+            {
+                sockets::close(connfd);
+            }
         }
         else
         {
-            sockets::close(connfd);
+            // if(errno == EAGAIN)
+            // {
+
+            // }
+            break;
         }
     }
 }

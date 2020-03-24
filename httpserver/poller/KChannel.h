@@ -2,6 +2,7 @@
 #include <functional>
 #include "../utils/Knoncopyable.h"
 #include "../utils/KTimestamp.h"
+#include <sys/epoll.h>
 
 namespace kback
 {
@@ -63,6 +64,12 @@ public:
     void disableAll()
     {
         events_ = kNoneEvent;
+        update();
+    }
+
+    void enableEpollET()
+    {
+        events_ |= EPOLLET;
         update();
     }
 

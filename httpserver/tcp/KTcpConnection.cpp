@@ -11,6 +11,8 @@
 
 using namespace kback;
 
+ssize_t writeET(int fd, const char *begin, size_t len);
+
 TcpConnection::TcpConnection(EventLoop *loop,
                              const std::string &nameArg,
                              int sockfd,
@@ -74,7 +76,8 @@ void TcpConnection::sendInLoop(const std::string &message)
     // if no thing in output queue, try writing directly
     if (!channel_->isWriting() && outputBuffer_.readableBytes() == 0)
     {
-        nwrote = ::write(channel_->fd(), message.data(), message.size());
+        // nwrote = ::write(channel_->fd(), message.data(), message.size());
+        nwrote = writeET(channel_->fd(), message.data(), message.size());
         if (nwrote >= 0)
         {
             if (implicit_cast<size_t>(nwrote) < message.size())
@@ -150,7 +153,8 @@ void TcpConnection::connectEstablished()
     assert(state_ == kConnecting);
     setState(kConnected);
     channel_->enableReading();
-
+    // 开启ET模式
+    channel_->enableEpollET();
     connectionCallback_(shared_from_this());
 }
 
@@ -169,7 +173,9 @@ void TcpConnection::connectDestroyed()
 void TcpConnection::handleRead(Timestamp receiveTime)
 {
     int savedErrno = 0;
-    ssize_t n = inputBuffer_.readFd(channel_->fd(), &savedErrno);
+    // ssize_t n = inputBuffer_.readFd(channel_->fd(), &savedErrno);
+    // ET模式读写，直到发生EAGAIN，才返回
+    ssize_t n = inputBuffer_.readFdET(channel_->fd(), &savedErrno);
     if (n > 0)
     {
         messageCallback_(shared_from_this(), &inputBuffer_, receiveTime);
@@ -193,8 +199,8 @@ void TcpConnection::handleWrite()
     loop_->assertInLoopThread();
     if (channel_->isWriting())
     {
-        ssize_t n = ::write(channel_->fd(), outputBuffer_.peek(), outputBuffer_.readableBytes());
-
+        // ssize_t n = ::write(channel_->fd(), outputBuffer_.peek(), outputBuffer_.readableBytes());
+        ssize_t n = writeET(channel_->fd(), outputBuffer_.peek(), outputBuffer_.readableBytes());
         if (n > 0)
         {
             outputBuffer_.retrieve(n);
@@ -255,4 +261,44 @@ void TcpConnection::handleError()
     std::cout << "LOG_ERROR:   "
               << "TcpConnection::handleError [" << name_
               << "] - SO_ERROR = " << err << " " << std::endl;
+}
+
+ssize_t writeET(int fd, const char *begin, size_t len)
+{
+    ssize_t writesum = 0;
+    char *tbegin = (char *)begin;
+    for (;;)
+    {
+        ssize_t n = ::write(fd, tbegin, len);
+        if (n > 0)
+        {
+            writesum += n;
+            tbegin += n;
+            len -= n;
+            if (len == 0)
+            {
+                return writesum;
+            }
+        }
+        else if (n < 0)
+        {
+            if (errno == EAGAIN) //系统缓冲区满，非阻塞返回
+            {
+                std::cout << "ET mode: errno == EAGAIN" << std::endl;
+                break;
+            }
+            // 暂未考虑其他错误
+            else
+            {
+                //
+                return -1;
+            }
+        }
+        else
+        {
+            // 返回0的情况，查看write的man，可以发现，一般是不会返回0的
+            return 0;
+        }
+    }
+    return writesum;
 }

@@ -50,10 +50,11 @@ public:
     }
 
 private:
-    // not thread safe, but in loop
+    // 服务器对新连接的连接处理函数
     void newConnection(int sockfd, const InetAddress &peerAddr);
-    void removeConnection(const TcpConnectionPtr &conn);
 
+    // 移除tcp连接函数
+    void removeConnection(const TcpConnectionPtr &conn);
     void removeConnectionInLoop(const TcpConnectionPtr &conn);
 
     typedef std::map<std::string, TcpConnectionPtr> ConnectionMap;
@@ -68,6 +69,7 @@ private:
     WriteCompleteCallback writeCompleteCallback_;
     bool started_;
     int nextConnId_; // always in loop thread
+    // tcp连接字典
     ConnectionMap connections_;
 
     std::unique_ptr<EventLoopThreadPool> threadPool_;

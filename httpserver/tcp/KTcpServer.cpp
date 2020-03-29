@@ -68,6 +68,8 @@ void TcpServer::newConnection(int sockfd, const InetAddress &peerAddr)
               << "] - new connection [" << connName
               << "] from " << peerAddr.toHostPort() << std::endl;
 
+    // 当新的连接达到时，先注册一个TcpConnection对象，然后用io线程进行管理
+
     InetAddress localAddr(sockets::getLocalAddr(sockfd));
     EventLoop *ioLoop = threadPool_->getNextLoop();
     // TcpConnectionPtr conn(new TcpConnection(loop_, connName, sockfd, localAddr, peerAddr));

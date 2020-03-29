@@ -75,4 +75,6 @@ int main(int argc, char *argv[])
     server.setThreadNum(numThreads);
     server.start();
     loop.loop();
+
+    return 0;
 }

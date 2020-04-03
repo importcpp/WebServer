@@ -240,6 +240,11 @@ void TcpConnection::handleWrite()
     }
 }
 
+// handleclose 的工作
+// 1. 取消channel中设置的关注事件
+// 2. 利用回调(将移除工作放到loop中)完成TcpConnection的注销工作
+//    2.1 移除TcpServer的map中TcpConnection中的管理
+//    2.2 再掉用自身的
 void TcpConnection::handleClose()
 {
     loop_->assertInLoopThread();
@@ -247,7 +252,8 @@ void TcpConnection::handleClose()
               << "TcpConnection::handleClose state = " << state_ << std::endl;
 
     assert(state_ == kConnected || state_ == kDisconnecting);
-    // we don't close fd, leave it to dtor, so we can find leaks easily.
+    // 这里不采取关闭fd的方式，因为建立了RAII的socket对象用于管理fd的析构
+    // 这里的关闭是处理完输入输出流，同样的这里不直接关闭也可以方便找出程序的漏洞
     channel_->disableAll();
     // must be the last line
     closeCallback_(shared_from_this());

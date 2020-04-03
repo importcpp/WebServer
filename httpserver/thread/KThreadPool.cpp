@@ -21,6 +21,7 @@ void ThreadPool::start(int numThreads)
 	threads_.reserve(numThreads);
 
 	for (int i = 0; i < numThreads; i++) {
+		// 注意这里是以右值的方式push_back
 		threads_.push_back(
 			std::thread(std::bind(&ThreadPool::runInThread, this)));
 	}

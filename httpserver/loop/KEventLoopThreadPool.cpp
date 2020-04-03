@@ -25,7 +25,7 @@ void EventLoopThreadPool::start()
 
     started_ = true;
 
-    for(int i = 0; i < numThreads_; ++i)
+    for (int i = 0; i < numThreads_; ++i)
     {
         EventLoopThread *t = new EventLoopThread;
         threads_.emplace_back(t);
@@ -33,12 +33,12 @@ void EventLoopThreadPool::start()
     }
 }
 
-EventLoop* EventLoopThreadPool::getNextLoop()
+EventLoop *EventLoopThreadPool::getNextLoop()
 {
     baseLoop_->assertInLoopThread();
     EventLoop *loop = baseLoop_;
 
-    if(!loops_.empty())
+    if (!loops_.empty())
     {
         // round-robin 分配 loop
         loop = loops_[next_];

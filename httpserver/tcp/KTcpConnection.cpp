@@ -26,9 +26,12 @@ TcpConnection::TcpConnection(EventLoop *loop,
       localAddr_(localAddr),
       peerAddr_(peerAddr)
 {
+#ifdef PCOUT
+
     std::cout << "LOG_DEBUG:   "
               << "TcpConnection::ctor[" << name_ << "] at " << this
               << " fd=" << sockfd << std::endl;
+#endif
     channel_->setReadCallback(
         std::bind(&TcpConnection::handleRead, this, _1));
     channel_->setWriteCallback(
@@ -41,9 +44,11 @@ TcpConnection::TcpConnection(EventLoop *loop,
 
 TcpConnection::~TcpConnection()
 {
+#ifdef PCOUT
     std::cout << "LOG_DEBUG:   "
               << "TcpConnection::dtor[" << name_ << "] at " << this
               << " fd=" << channel_->fd() << std::endl;
+#endif
 }
 
 void TcpConnection::send(const std::string &message)
@@ -77,8 +82,10 @@ void TcpConnection::sendInLoop(const std::string &message)
         {
             if (implicit_cast<size_t>(nwrote) < message.size())
             {
+#ifdef PCOUT
                 std::cout << "LOG_TRACE:   "
                           << "I am going to write more data" << std::endl;
+#endif
             }
             else if (writeCompleteCallback_)
             {
@@ -91,8 +98,11 @@ void TcpConnection::sendInLoop(const std::string &message)
             nwrote = 0;
             if (errno != EWOULDBLOCK)
             {
+#ifdef PCOUT
+
                 std::cout << "LOG_SYSERR:   "
                           << "TcpConnection::sendInLoop" << std::endl;
+#endif
             }
         }
     }
@@ -180,8 +190,10 @@ void TcpConnection::handleRead(Timestamp receiveTime)
     else
     {
         errno = savedErrno;
+#ifdef PCOUT
         std::cout << "LOG_SYSERR:   "
                   << "TcpConnection::handleRead" << std::endl;
+#endif
         handleError();
     }
 }
@@ -211,20 +223,26 @@ void TcpConnection::handleWrite()
             }
             else
             {
+#ifdef PCOUT
                 std::cout << "LOG_TRACE:   "
                           << "I am going to write more data" << std::endl;
+#endif
             }
         }
         else
         {
+#ifdef PCOUT
             std::cout << "LOG_SYSERR:   "
                       << "TcpConnection::handleWrite" << std::endl;
+#endif
         }
     }
     else
     {
+#ifdef PCOUT
         std::cout << "LOG_TRACE:   "
                   << "Connection is down, no more writing" << std::endl;
+#endif
     }
 }
 
@@ -236,9 +254,10 @@ void TcpConnection::handleWrite()
 void TcpConnection::handleClose()
 {
     loop_->assertInLoopThread();
+#ifdef PCOUT
     std::cout << "LOG_TRACE:   "
               << "TcpConnection::handleClose state = " << state_ << std::endl;
-
+#endif
     assert(state_ == kConnected || state_ == kDisconnecting);
     // 这里不采取关闭fd的方式，因为建立了RAII的socket对象用于管理fd的析构
     // 这里的关闭是处理完输入输出流，同样的这里不直接关闭也可以方便找出程序的漏洞
@@ -249,9 +268,11 @@ void TcpConnection::handleClose()
 void TcpConnection::handleError()
 {
     int err = sockets::getSocketError(channel_->fd());
+#ifdef PCOUT
     std::cout << "LOG_ERROR:   "
               << "TcpConnection::handleError [" << name_
               << "] - SO_ERROR = " << err << " " << std::endl;
+#endif
 }
 
 ssize_t writeET(int fd, const char *begin, size_t len)
@@ -275,7 +296,9 @@ ssize_t writeET(int fd, const char *begin, size_t len)
         {
             if (errno == EAGAIN) //系统缓冲区满，非阻塞返回
             {
+#ifdef PCOUT
                 std::cout << "ET mode: errno == EAGAIN" << std::endl;
+#endif
                 break;
             }
             // 暂未考虑其他错误

@@ -39,15 +39,17 @@ void Channel::handleEvent(Timestamp receiveTime)
     eventHandling_ = true;
     if (revents_ & POLLNVAL) // invalid polling request
     {
-        // LOG_WARN << "Channel::handle_event() POLLNVAL";
+#ifdef PCOUT
         std::cout << "LOG_WARN:   "
                   << "Channel::handle_event() POLLNVAL" << std::endl;
+#endif
     }
     if ((revents_ & POLLHUP) && !(revents_ & POLLIN))
     {
-        // LOG_WARN << "Channel::handle_event() POLLHUP";
+#ifdef PCOUT
         std::cout << "LOG_WARN:   "
                   << "Channel::handle_event() POLLHUP" << std::endl;
+#endif
         if (closeCallback_)
             closeCallback_();
     }

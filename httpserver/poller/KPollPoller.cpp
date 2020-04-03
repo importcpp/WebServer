@@ -25,19 +25,25 @@ Timestamp PollPoller::poll(int timeoutMs, ChannelList *activeChannels)
     Timestamp now(Timestamp::now());
     if (numEvents > 0)
     {
+#ifdef PCOUT
         std::cout << "LOG_TRACE:   " << numEvents << " events happended" << std::endl;
+#endif
         fillActiveChannels(numEvents, activeChannels);
     }
     else if (numEvents == 0)
     {
+#ifdef PCOUT
         std::cout << "LOG_TRACE:   " << numEvents << " nothing happended" << std::endl;
+#endif
     }
     else
     {
         if (saveErrno != EINTR)
         {
+#ifdef PCOUT
             std::cout << "LOG_SYSERR:   "
                       << "PollPoller::poll()" << std::endl;
+#endif
         }
     }
     return now;
@@ -73,8 +79,10 @@ void PollPoller::fillActiveChannels(int numEvents,
 void PollPoller::updateChannel(Channel *channel)
 {
     Poller::assertInLoopThread();
+#ifdef PCOUT
     std::cout << "LOG_TRACE:   "
               << "fd = " << channel->fd() << " events = " << channel->events() << std::endl;
+#endif
     if (channel->index() < 0)
     {
         assert(channels_.find(channel->fd()) == channels_.end());
@@ -108,8 +116,10 @@ void PollPoller::updateChannel(Channel *channel)
 void PollPoller::removeChannel(Channel *channel)
 {
     Poller::assertInLoopThread();
+#ifdef PCOUT
     std::cout << "LOG_TRACE:   "
               << "fd = " << channel->fd() << std::endl;
+#endif
     assert(channels_.find(channel->fd()) != channels_.end());
     assert(channels_[channel->fd()] == channel);
     assert(channel->isNoneEvent());

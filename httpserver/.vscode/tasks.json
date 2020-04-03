@@ -8,6 +8,7 @@
                 "-I .",
                 "-g",
                 "-std=c++11",
+                // "-D PCOUT",
                 "${file}",
                 "${workspaceFolder}/loop/KEventLoop.cpp",
                 "${workspaceFolder}/loop/KEventLoopThread.cpp",
@@ -19,8 +20,6 @@
                 "${workspaceFolder}/poller/KEPollPoller.cpp",
 
                 "${workspaceFolder}/utils/KTimestamp.cpp",
-                // "${workspaceFolder}/KTimer.cpp",
-                // "${workspaceFolder}/KTimerQueue.cpp",
 
                 "${workspaceFolder}/tcp/KSocket.cpp",
                 "${workspaceFolder}/tcp/KSocketsOps.cpp",

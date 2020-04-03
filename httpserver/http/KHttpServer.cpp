@@ -25,9 +25,11 @@ HttpServer::HttpServer(EventLoop *loop,
 
 void HttpServer::start()
 {
+#ifdef PCOUT
     std::cout << "LOG_WARN:   "
               << "HttpServer[" << server_.name()
               << "] starts listenning on " << server_.ipPort() << std::endl;
+#endif
     // 启动TcpServer, 开始监听端口
     server_.start();
 }
@@ -71,7 +73,7 @@ void HttpServer::onRequest(const TcpConnectionPtr &conn, const HttpRequest &req)
     response.appendToBuffer(&buf);
     // conn->send(&buf);
     string temp = buf.retrieveAsString();
-    conn->send(temp); 
+    conn->send(temp);
     if (response.closeConnection())
     {
         conn->shutdown();

@@ -14,13 +14,18 @@ bool benchmark = false;
 
 void onRequest(const HttpRequest &req, HttpResponse *resp)
 {
+#ifdef PCOUT
     std::cout << "Headers " << req.methodString() << " " << req.path() << std::endl;
+#endif
     if (!benchmark)
     {
         const std::map<string, string> &headers = req.headers();
         for (const auto &header : headers)
         {
+#ifdef PCOUT
+
             std::cout << header.first << ": " << header.second << std::endl;
+#endif
         }
     }
 
@@ -57,7 +62,6 @@ void onRequest(const HttpRequest &req, HttpResponse *resp)
         resp->setStatusMessage("Not Found");
         resp->setCloseConnection(true);
     }
-    
 }
 
 int main(int argc, char *argv[])

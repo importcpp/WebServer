@@ -62,12 +62,12 @@ void TcpServer::newConnection(int sockfd, const InetAddress &peerAddr)
     snprintf(buf, sizeof buf, "#%d", nextConnId_);
     ++nextConnId_;
     std::string connName = name_ + buf;
-
+#ifdef PCOUT
     std::cout << "LOG_INFO:   "
               << "TcpServer::newConnection [" << name_
               << "] - new connection [" << connName
               << "] from " << peerAddr.toHostPort() << std::endl;
-
+#endif
     // 当新的连接达到时，先注册一个TcpConnection对象，然后用io线程进行管理
 
     InetAddress localAddr(sockets::getLocalAddr(sockfd));
@@ -90,9 +90,12 @@ void TcpServer::removeConnection(const TcpConnectionPtr &conn)
 void TcpServer::removeConnectionInLoop(const TcpConnectionPtr &conn)
 {
     loop_->assertInLoopThread();
+#ifdef PCOUT
+
     std::cout << "LOG_INFO:   "
               << "TcpServer::removeConnection [" << name_
               << "] - connection " << conn->name() << std::endl;
+#endif
     // 此时，conn 对象被其本身还有 connections_ 对象持有，
     // 当把conn从 connections_ 中移除时引用计数降到1, 不做处理的话，离开作用域后就会被销毁
     // 最后使用了 std::bind 让TcpConnection的生命期延长到connectDestroyed 调用完成时

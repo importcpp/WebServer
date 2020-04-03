@@ -11,9 +11,6 @@ namespace kback
 class EventLoop;
 class InetAddress;
 
-///
-/// Acceptor of incoming TCP connections.
-///
 class Acceptor : noncopyable
 {
 public:

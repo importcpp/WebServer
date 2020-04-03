@@ -9,15 +9,6 @@
 
 using namespace kback;
 
-// On Linux, the constants of poll(2) and epoll(4)
-// are expected to be the same.
-static_assert(EPOLLIN == POLLIN, "epoll uses same flag values as poll");
-static_assert(EPOLLPRI == POLLPRI, "epoll uses same flag values as poll");
-static_assert(EPOLLOUT == POLLOUT, "epoll uses same flag values as poll");
-static_assert(EPOLLRDHUP == POLLRDHUP, "epoll uses same flag values as poll");
-static_assert(EPOLLERR == POLLERR, "epoll uses same flag values as poll");
-static_assert(EPOLLHUP == POLLHUP, "epoll uses same flag values as poll");
-
 namespace
 {
 const int kNew = -1;
@@ -32,7 +23,6 @@ EPollPoller::EPollPoller(EventLoop *loop)
 {
     if (epollfd_ < 0)
     {
-        // LOG_SYSFATAL << "EPollPoller::EPollPoller";
         std::cout << "LOG_SYSFATAL"
                   << "EPollPoller::EPollPoller" << std::endl;
     }
@@ -47,7 +37,6 @@ Timestamp EPollPoller::poll(int timeoutMs, ChannelList *activeChannels)
 {
     std::cout << "LOG_TRACE"
               << "fd total count " << channels_.size() << std::endl;
-    // LOG_TRACE << "fd total count " << channels_.size();
     int numEvents = ::epoll_wait(epollfd_,
                                  &*events_.begin(),
                                  static_cast<int>(events_.size()),
@@ -70,11 +59,9 @@ Timestamp EPollPoller::poll(int timeoutMs, ChannelList *activeChannels)
     }
     else
     {
-        // error happens, log uncommon ones
         if (savedErrno != EINTR)
         {
             errno = savedErrno;
-            // LOG_SYSERR << "EPollPoller::poll()";
             std::cout << "LOG_SYSERR"
                       << "EPollPoller::poll()" << std::endl;
         }
@@ -89,12 +76,6 @@ void EPollPoller::fillActiveChannels(int numEvents,
     for (int i = 0; i < numEvents; ++i)
     {
         Channel *channel = static_cast<Channel *>(events_[i].data.ptr);
-#ifndef NDEBUG
-        int fd = channel->fd();
-        ChannelMap::const_iterator it = channels_.find(fd);
-        assert(it != channels_.end());
-        assert(it->second == channel);
-#endif
         channel->set_revents(events_[i].events);
         activeChannels->push_back(channel);
     }
@@ -109,7 +90,7 @@ void EPollPoller::updateChannel(Channel *channel)
               << " events = " << channel->events() << " index = " << index << std::endl;
     if (index == kNew || index == kDeleted)
     {
-        // a new one, add with EPOLL_CTL_ADD
+        // 使用EPOLL_CTL_ADD添加新的fd
         int fd = channel->fd();
         if (index == kNew)
         {
@@ -127,7 +108,7 @@ void EPollPoller::updateChannel(Channel *channel)
     }
     else
     {
-        // update existing one with EPOLL_CTL_MOD/DEL
+        //  EPOLL_CTL_MOD/DEL更新当前关注的事件
         int fd = channel->fd();
         (void)fd;
         assert(channels_.find(fd) != channels_.end());
@@ -149,7 +130,6 @@ void EPollPoller::removeChannel(Channel *channel)
 {
     Poller::assertInLoopThread();
     int fd = channel->fd();
-    // LOG_TRACE << "fd = " << fd;
     std::cout << "LOG_TRACE:   "
               << "fd = " << fd << std::endl;
     assert(channels_.find(fd) != channels_.end());
@@ -175,15 +155,13 @@ void EPollPoller::update(int operation, Channel *channel)
     event.events = channel->events();
     event.data.ptr = channel;
     int fd = channel->fd();
-    // LOG_TRACE << "epoll_ctl op = " << operationToString(operation)
-    //           << " fd = " << fd << " event = { " << channel->eventsToString() << " }";
-    std::cout << "LOG_TRACE" << "epoll_ctl op = " << operationToString(operation)
+    std::cout << "LOG_TRACE"
+              << "epoll_ctl op = " << operationToString(operation)
               << " fd = " << fd << " event = { " << channel->eventsToString() << " }";
     if (::epoll_ctl(epollfd_, operation, fd, &event) < 0)
     {
         if (operation == EPOLL_CTL_DEL)
         {
-            // LOG_SYSERR << "epoll_ctl op =" << operationToString(operation) << " fd =" << fd;
             std::cout << "LOG_SYSERR"
                       << "epoll_ctl op =" << operationToString(operation) << " fd =" << fd << std::endl;
         }

@@ -42,30 +42,14 @@ void setNonBlockAndCloseOnExec(int sockfd)
 
 int sockets::createNonblockingOrDie()
 {
-    // socket
-    // valgrind C++调试工具
-#if VALGRIND
-    int sockfd = ::socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-    if (sockfd < 0)
-    {
-        // LOG_SYSFATAL << "sockets::createNonblockingOrDie";
-        std::cout << "LOG_SYSFATAL:   "
-                  << "sockets::createNonblockingOrDie" << std::endl;
-    }
-
-    setNonBlockAndCloseOnExec(sockfd);
-#else
     int sockfd = ::socket(AF_INET,
                           SOCK_STREAM | SOCK_NONBLOCK | SOCK_CLOEXEC,
                           IPPROTO_TCP);
     if (sockfd < 0)
     {
-        // LOG_SYSFATAL << "sockets::createNonblockingOrDie";
         std::cout << "LOG_SYSFATAL:   "
                   << "sockets::createNonblockingOrDie" << std::endl;
     }
-#endif
-    // std::cout << "TCP sockfd is:  " << sockfd << std::endl;
     return sockfd;
 }
 
@@ -79,7 +63,6 @@ void sockets::bindOrDie(int sockfd, const struct sockaddr_in &addr)
     int ret = ::bind(sockfd, sockaddr_cast(&addr), sizeof addr);
     if (ret < 0)
     {
-        // LOG_SYSFATAL << "sockets::bindOrDie";
         std::cout << "LOG_SYSFATAL:   "
                   << "sockets::bindOrDie" << std::endl;
     }
@@ -90,7 +73,6 @@ void sockets::listenOrDie(int sockfd)
     int ret = ::listen(sockfd, SOMAXCONN);
     if (ret < 0)
     {
-        // LOG_SYSFATAL << "sockets::listenOrDie";
         std::cout << "LOG_SYSFATAL:   "
                   << "sockets::listenOrDie" << std::endl;
     }
@@ -109,7 +91,6 @@ int sockets::accept(int sockfd, struct sockaddr_in *addr)
     if (connfd < 0)
     {
         int savedErrno = errno;
-        //  LOG_SYSERR << "Socket::accept";
         std::cout << "LOG_SYSERR:   "
                   << "Socket::accept" << std::endl;
         switch (savedErrno)
@@ -117,7 +98,7 @@ int sockets::accept(int sockfd, struct sockaddr_in *addr)
         case EAGAIN:
         case ECONNABORTED:
         case EINTR:
-        case EPROTO: // ???
+        case EPROTO: 
         case EPERM:
         case EMFILE: // per-process lmit of open file desctiptor ???
             // expected errors
@@ -132,12 +113,10 @@ int sockets::accept(int sockfd, struct sockaddr_in *addr)
         case ENOTSOCK:
         case EOPNOTSUPP:
             // unexpected errors
-            // LOG_FATAL << "unexpected error of ::accept " << savedErrno;
             std::cout << "LOG_FATAL:   "
                       << "unexpected error of ::accept " << std::endl;
             break;
         default:
-            // LOG_FATAL << "unknown error of ::accept " << savedErrno;
             std::cout << "LOG_FATAL:   "
                       << "unknown error of ::accept" << std::endl;
             break;
@@ -150,7 +129,6 @@ void sockets::close(int sockfd)
 {
     if (::close(sockfd) < 0)
     {
-        // LOG_SYSERR << "sockets::close";
         std::cout << "LOG_SYSERR:   "
                   << "sockets::close" << std::endl;
     }
@@ -160,7 +138,6 @@ void sockets::shutdownWrite(int sockfd)
 {
     if (::shutdown(sockfd, SHUT_WR) < 0)
     {
-        // LOG_SYSERR << "sockets::shutdownWrite";
         std::cout << "LOG_SYSERR:   "
                   << "sockets::shutdownWrite" << std::endl;
     }
@@ -182,7 +159,6 @@ void sockets::fromHostPort(const char *ip, uint16_t port,
     addr->sin_port = hostToNetwork16(port);
     if (::inet_pton(AF_INET, ip, &addr->sin_addr) <= 0)
     {
-        // LOG_SYSERR << "sockets::fromHostPort";
         std::cout << "LOG_SYSERR:   "
                   << "sockets::fromHostPort" << std::endl;
     }
@@ -195,7 +171,6 @@ struct sockaddr_in sockets::getLocalAddr(int sockfd)
     socklen_t addrlen = sizeof(localaddr);
     if (::getsockname(sockfd, sockaddr_cast(&localaddr), &addrlen) < 0)
     {
-        // LOG_SYSERR << "sockets::getLocalAddr";
         std::cout << "LOG_SYSERR:   "
                   << "sockets::getLocalAddr" << std::endl;
     }
@@ -210,7 +185,6 @@ struct sockaddr_in sockets::getPeerAddr(int sockfd)
     // 
     if (::getpeername(sockfd, sockaddr_cast(&peeraddr), &addrlen) < 0)
     {
-        // LOG_SYSERR << "sockets::getPeerAddr";
         std::cout << "LOG_SYSERR:   "
                   << "sockets::getPeerAddr" << std::endl;
     }

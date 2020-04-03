@@ -6,30 +6,17 @@
 
 using namespace kback;
 
-// class IgnoreSigPipe
-// {
-// public:
-//     IgnoreSigPipe()
-//     {
-//         ::signal(SIGPIPE, SIG_IGN);
-//     }
-// };
-
-// IgnoreSigPipe initObj;
-
 // 通过 __thread 来保证一个线程只能创建一个 EventLoop
 // __thread 变量是每个线程有的一份独立的实体
 // 类似于static 只在编译期初始化
 __thread EventLoop *t_loopInThisThread = 0;
 const int kPollTimeMs = 10000;
 
-// ??? 查一下eventfd
 static int createEventfd()
 {
     int evtfd = ::eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
     if (evtfd < 0)
     {
-        // LOG_SYSERR << "Failed in eventfd";
         std::cout << "LOG_SYSERR:   "
                   << "Failed in eventfd" << std::endl;
         abort();
@@ -152,7 +139,6 @@ void EventLoop::handleRead()
     // 判断读取的字节是不是 one对应的字节数
     if (n != sizeof one)
     {
-        // LOG_ERROR << "EventLoop::handleRead() reads " << n << " bytes instead of 8";
         std::cout << "LOG_ERROR:   "
                   << "EventLoop::handleRead() reads " << n << " bytes instead of 8";
     }
@@ -161,7 +147,6 @@ void EventLoop::handleRead()
 // 执行装载的的回调函数，下面的处理方法很巧妙
 void EventLoop::doPendingFunctors()
 {
-    // std::vector<Functor> pendingFunctors_;
     std::vector<Functor> functors;
     callingPendingFunctors_ = true;
     {

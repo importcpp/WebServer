@@ -70,7 +70,6 @@ void Acceptor::handleRead()
         {
             // if(errno == EAGAIN)
             // {
-
             // }
             break;
         }

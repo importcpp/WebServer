@@ -10,17 +10,6 @@
 
 namespace kback
 {
-
-/// A buffer class modeled after org.jboss.netty.buffer.ChannelBuffer
-///
-/// @code
-/// +-------------------+------------------+------------------+
-/// | prependable bytes |  readable bytes  |  writable bytes  |
-/// |                   |     (CONTENT)    |                  |
-/// +-------------------+------------------+------------------+
-/// |                   |                  |                  |
-/// 0      <=      readerIndex   <=   writerIndex    <=     size
-/// @endcode
 class Buffer : public kback::copyable
 {
 public:
@@ -36,8 +25,6 @@ public:
         assert(writableBytes() == kInitialSize);
         assert(prependableBytes() == kCheapPrepend);
     }
-
-    // default copy-ctor, dtor and assignment are fine
 
     void swap(Buffer &rhs)
     {
@@ -68,14 +55,10 @@ public:
 
     const char *findCRLF() const
     {
-        // FIXME: replace with memmem()?
         const char *crlf = std::search(peek(), beginWrite(), kCRLF, kCRLF + 2);
         return crlf == beginWrite() ? NULL : crlf;
     }
 
-    // retrieve returns void, to prevent
-    // string str(retrieve(readableBytes()), readableBytes());
-    // the evaluation of two functions are unspecified
     void retrieve(size_t len)
     {
         assert(len <= readableBytes());

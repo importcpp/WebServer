@@ -26,8 +26,6 @@ TcpConnection::TcpConnection(EventLoop *loop,
       localAddr_(localAddr),
       peerAddr_(peerAddr)
 {
-    // LOG_DEBUG << "TcpConnection::ctor[" << name_ << "] at " << this
-    //           << " fd=" << sockfd;
     std::cout << "LOG_DEBUG:   "
               << "TcpConnection::ctor[" << name_ << "] at " << this
               << " fd=" << sockfd << std::endl;
@@ -43,8 +41,6 @@ TcpConnection::TcpConnection(EventLoop *loop,
 
 TcpConnection::~TcpConnection()
 {
-    // LOG_DEBUG << "TcpConnection::dtor[" << name_ << "] at " << this
-    //           << " fd=" << channel_->fd();
     std::cout << "LOG_DEBUG:   "
               << "TcpConnection::dtor[" << name_ << "] at " << this
               << " fd=" << channel_->fd() << std::endl;
@@ -65,18 +61,17 @@ void TcpConnection::send(const std::string &message)
     }
 }
 
+// sendInLoop() 会先尝试直接发送数据，如果一次发送完毕，就不会启用writeCallback
+// 如果只发送了部分数据，则把剩余的数据放入outputBuffer_, 并开始关注writable事件，
+// 以后在handlewrite中发送剩余的数据， 如果当前outputBuffer_已经有待发送的数据，
+// 那么就不能先尝试发送了，因为会造成数据乱序
 void TcpConnection::sendInLoop(const std::string &message)
 {
-    // sendInLoop() 会先尝试直接发送数据，如果一次发送完毕，就不会启用writeCallback
-    // 如果只发送了部分数据，则把剩余的数据放入outputBuffer_, 并开始关注writable事件，
-    // 以后在handlewrite中发送剩余的数据， 如果当前outputBuffer_已经有待发送的数据，
-    // 那么就不能先尝试发送了，因为会造成数据乱序
     loop_->assertInLoopThread();
     ssize_t nwrote = 0;
-    // if no thing in output queue, try writing directly
+    // 如果输出队列为空，那么可以直接写进输出buffer
     if (!channel_->isWriting() && outputBuffer_.readableBytes() == 0)
     {
-        // nwrote = ::write(channel_->fd(), message.data(), message.size());
         nwrote = writeET(channel_->fd(), message.data(), message.size());
         if (nwrote >= 0)
         {
@@ -116,11 +111,9 @@ void TcpConnection::sendInLoop(const std::string &message)
 
 void TcpConnection::shutdown()
 {
-    // FIXME: use compare and swap
     if (state_ == kConnected)
     {
         setState(kDisconnecting);
-        // FIXME: shared_from_this()?
         loop_->runInLoop(std::bind(&TcpConnection::shutdownInLoop, this));
     }
 }
@@ -131,7 +124,7 @@ void TcpConnection::shutdownInLoop()
     loop_->assertInLoopThread();
     if (!channel_->isWriting())
     {
-        // we are not writing
+        // 优雅的关闭套接字
         socket_->shutdownWrite();
     }
 }
@@ -187,7 +180,6 @@ void TcpConnection::handleRead(Timestamp receiveTime)
     else
     {
         errno = savedErrno;
-        // LOG_SYSERR << "TcpConnection::handleRead";
         std::cout << "LOG_SYSERR:   "
                   << "TcpConnection::handleRead" << std::endl;
         handleError();
@@ -199,7 +191,6 @@ void TcpConnection::handleWrite()
     loop_->assertInLoopThread();
     if (channel_->isWriting())
     {
-        // ssize_t n = ::write(channel_->fd(), outputBuffer_.peek(), outputBuffer_.readableBytes());
         ssize_t n = writeET(channel_->fd(), outputBuffer_.peek(), outputBuffer_.readableBytes());
         if (n > 0)
         {
@@ -220,21 +211,18 @@ void TcpConnection::handleWrite()
             }
             else
             {
-                // LOG_TRACE << "I am going to write more data";
                 std::cout << "LOG_TRACE:   "
                           << "I am going to write more data" << std::endl;
             }
         }
         else
         {
-            // LOG_SYSERR << "TcpConnection::handleWrite";
             std::cout << "LOG_SYSERR:   "
                       << "TcpConnection::handleWrite" << std::endl;
         }
     }
     else
     {
-        // LOG_TRACE << "Connection is down, no more writing";
         std::cout << "LOG_TRACE:   "
                   << "Connection is down, no more writing" << std::endl;
     }
@@ -255,15 +243,12 @@ void TcpConnection::handleClose()
     // 这里不采取关闭fd的方式，因为建立了RAII的socket对象用于管理fd的析构
     // 这里的关闭是处理完输入输出流，同样的这里不直接关闭也可以方便找出程序的漏洞
     channel_->disableAll();
-    // must be the last line
     closeCallback_(shared_from_this());
 }
 
 void TcpConnection::handleError()
 {
     int err = sockets::getSocketError(channel_->fd());
-    // LOG_ERROR << "TcpConnection::handleError [" << name_
-    //           << "] - SO_ERROR = " << err << " " << strerror_tl(err);
     std::cout << "LOG_ERROR:   "
               << "TcpConnection::handleError [" << name_
               << "] - SO_ERROR = " << err << " " << std::endl;

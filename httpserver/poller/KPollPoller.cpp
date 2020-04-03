@@ -25,18 +25,15 @@ Timestamp PollPoller::poll(int timeoutMs, ChannelList *activeChannels)
     Timestamp now(Timestamp::now());
     if (numEvents > 0)
     {
-        // LOG_TRACE << numEvents << " events happended";
         std::cout << "LOG_TRACE:   " << numEvents << " events happended" << std::endl;
         fillActiveChannels(numEvents, activeChannels);
     }
     else if (numEvents == 0)
     {
-        // LOG_TRACE << " nothing happended";
         std::cout << "LOG_TRACE:   " << numEvents << " nothing happended" << std::endl;
     }
     else
     {
-        // report error and abort
         if (saveErrno != EINTR)
         {
             std::cout << "LOG_SYSERR:   "
@@ -76,12 +73,10 @@ void PollPoller::fillActiveChannels(int numEvents,
 void PollPoller::updateChannel(Channel *channel)
 {
     Poller::assertInLoopThread();
-    // LOG_TRACE << "fd = " << channel->fd() << " events = " << channel->events();
     std::cout << "LOG_TRACE:   "
               << "fd = " << channel->fd() << " events = " << channel->events() << std::endl;
     if (channel->index() < 0)
     {
-        // a new one, add to pollfds_
         assert(channels_.find(channel->fd()) == channels_.end());
         struct pollfd pfd;
         pfd.fd = channel->fd();
@@ -94,7 +89,6 @@ void PollPoller::updateChannel(Channel *channel)
     }
     else
     {
-        // update existing one
         assert(channels_.find(channel->fd()) != channels_.end());
         assert(channels_[channel->fd()] == channel);
         int idx = channel->index();
@@ -106,7 +100,6 @@ void PollPoller::updateChannel(Channel *channel)
         pfd.revents = 0;
         if (channel->isNoneEvent())
         {
-            // ignore this pollfd
             pfd.fd = -channel->fd() - 1;
         }
     }
@@ -115,7 +108,6 @@ void PollPoller::updateChannel(Channel *channel)
 void PollPoller::removeChannel(Channel *channel)
 {
     Poller::assertInLoopThread();
-    // LOG_TRACE << "fd = " << channel->fd();
     std::cout << "LOG_TRACE:   "
               << "fd = " << channel->fd() << std::endl;
     assert(channels_.find(channel->fd()) != channels_.end());

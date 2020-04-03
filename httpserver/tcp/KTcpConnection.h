@@ -72,7 +72,6 @@ public:
         writeCompleteCallback_ = cb;
     }
 
-    /// Internal use only.
     void setCloseCallback(const CloseCallback &cb)
     {
         closeCallback_ = cb;

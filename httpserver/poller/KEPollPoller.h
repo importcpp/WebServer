@@ -8,9 +8,6 @@ struct epoll_event;
 namespace kback
 {
 
-///
-/// IO Multiplexing with epoll(4).
-///
 class EPollPoller : public Poller
 {
 public:

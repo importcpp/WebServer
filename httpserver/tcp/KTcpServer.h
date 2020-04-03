@@ -33,7 +33,7 @@ public:
 
     void setThreadNum(int numThreads);
 
-    //
+    // 回调函数机制
     void setConnectionCallback(const ConnectionCallback &cb)
     {
         connectionCallback_ = cb;
@@ -59,7 +59,7 @@ private:
 
     typedef std::map<std::string, TcpConnectionPtr> ConnectionMap;
 
-    EventLoop *loop_; // the acceptor loop
+    EventLoop *loop_; // 主线程loop对象，用于管理accept
     const string ipPort_;
     const string name_;
     std::unique_ptr<Acceptor> acceptor_;
@@ -68,10 +68,9 @@ private:
     MessageCallback messageCallback_;
     WriteCompleteCallback writeCompleteCallback_;
     bool started_;
-    int nextConnId_; // always in loop thread
+    int nextConnId_;
     // tcp连接字典
     ConnectionMap connections_;
-
     std::unique_ptr<EventLoopThreadPool> threadPool_;
 };
 

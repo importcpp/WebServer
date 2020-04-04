@@ -67,11 +67,14 @@ public:
         update();
     }
 
+#ifdef USE_EPOLL_LT
+#else
     void enableEpollET()
     {
         events_ |= EPOLLET;
         update();
     }
+#endif
 
     bool isWriting() const { return events_ & kWriteEvent; }
     // for poller

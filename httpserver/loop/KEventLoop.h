@@ -14,12 +14,19 @@
 
 #include <functional>
 
+#ifdef USE_LOCKFREEQUEUE
+#include "../lock/KLockFreeQueue.h"
+#endif
+
+#ifdef USE_SPINLOCK
+#include "../lock/KSpinLock.h"
+#endif
+
 namespace kback
 {
 
-
 class Channel;
-class Poller;
+class EventManager;
 
 class EventLoop : noncopyable
 {
@@ -41,7 +48,6 @@ public:
     /// Safe to call from other threads.
     // note: 将cb放入队列，并在必要时唤醒IO线程
     void queueInLoop(const Functor &cb);
-
 
     // internal use only
     void wakeup();
@@ -67,17 +73,17 @@ private:
     bool looping_;
     const std::thread::id threadId_;
 
-    typedef std::vector<Channel*> ChannelList;
+    typedef std::vector<Channel *> ChannelList;
     ChannelList activeChannels_;
 
-    // 用unique_ptr自动管理指向Poller的指针
-    // 不需要担心poller_的销毁问题
-    std::unique_ptr<Poller> poller_;
+    // 用unique_ptr自动管理指向EventManager的指针
+    // 不需要担心EventManager_的销毁问题
+    std::unique_ptr<EventManager> eventmanager_;
 
     bool quit_; // atomic
     Timestamp pollReturnTime_;
 
-    // 全部用于唤醒机制 
+    // 全部用于唤醒机制
     void handleRead(); // 用于wakeup channel的回调
     void doPendingFunctors();
     bool callingPendingFunctors_;
@@ -85,8 +91,16 @@ private:
     int wakeupFd_;
     std::unique_ptr<Channel> wakeupChannel_;
 
+#ifdef USE_LOCKFREEQUEUE
+    LockFreeQueue<Functor> pendingFunctors_;
+#else
+// 锁类型的选择
+#ifdef USE_SPINLOCK
+    SpinLock spinlock;
+#else
     std::mutex mutex_;
+#endif
     std::vector<Functor> pendingFunctors_;
-
+#endif
 };
 } // namespace kback

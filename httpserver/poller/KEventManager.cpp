@@ -1,4 +1,4 @@
-#include "KEPollPoller.h"
+#include "KEventManager.h"
 #include "KChannel.h"
 #include <iostream>
 #include <assert.h>
@@ -16,8 +16,8 @@ const int kAdded = 1;
 const int kDeleted = 2;
 } // namespace
 
-EPollPoller::EPollPoller(EventLoop *loop)
-    : Poller(loop),
+EventManager::EventManager(EventLoop *loop)
+    : ownerLoop_(loop),
       epollfd_(::epoll_create1(EPOLL_CLOEXEC)),
       events_(kInitEventListSize)
 {
@@ -25,17 +25,17 @@ EPollPoller::EPollPoller(EventLoop *loop)
     {
 #ifdef PCOUT
         std::cout << "LOG_SYSFATAL"
-                  << "EPollPoller::EPollPoller" << std::endl;
+                  << "EventManager::EventManager" << std::endl;
 #endif
     }
 }
 
-EPollPoller::~EPollPoller()
+EventManager::~EventManager()
 {
     ::close(epollfd_);
 }
 
-Timestamp EPollPoller::poll(int timeoutMs, ChannelList *activeChannels)
+Timestamp EventManager::poll(int timeoutMs, ChannelList *activeChannels)
 {
 #ifdef PCOUT
     std::cout << "LOG_TRACE"
@@ -72,14 +72,14 @@ Timestamp EPollPoller::poll(int timeoutMs, ChannelList *activeChannels)
             errno = savedErrno;
 #ifdef PCOUT
             std::cout << "LOG_SYSERR"
-                      << "EPollPoller::poll()" << std::endl;
+                      << "EventManager::poll()" << std::endl;
 #endif
         }
     }
     return now;
 }
 
-void EPollPoller::fillActiveChannels(int numEvents,
+void EventManager::fillActiveChannels(int numEvents,
                                      ChannelList *activeChannels) const
 {
     assert(implicit_cast<size_t>(numEvents) <= events_.size());
@@ -91,9 +91,9 @@ void EPollPoller::fillActiveChannels(int numEvents,
     }
 }
 
-void EPollPoller::updateChannel(Channel *channel)
+void EventManager::updateChannel(Channel *channel)
 {
-    Poller::assertInLoopThread();
+    assertInLoopThread();
     const int index = channel->index();
 #ifdef PCOUT
     std::cout << "LOG_TRACE"
@@ -138,9 +138,9 @@ void EPollPoller::updateChannel(Channel *channel)
     }
 }
 
-void EPollPoller::removeChannel(Channel *channel)
+void EventManager::removeChannel(Channel *channel)
 {
-    Poller::assertInLoopThread();
+    assertInLoopThread();
     int fd = channel->fd();
 #ifdef PCOUT
     std::cout << "LOG_TRACE:   "
@@ -162,7 +162,7 @@ void EPollPoller::removeChannel(Channel *channel)
     channel->set_index(kNew);
 }
 
-void EPollPoller::update(int operation, Channel *channel)
+void EventManager::update(int operation, Channel *channel)
 {
     struct epoll_event event;
     memZero(&event, sizeof event);
@@ -193,7 +193,7 @@ void EPollPoller::update(int operation, Channel *channel)
     }
 }
 
-const char *EPollPoller::operationToString(int op)
+const char *EventManager::operationToString(int op)
 {
     switch (op)
     {

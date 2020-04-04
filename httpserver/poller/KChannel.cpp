@@ -61,7 +61,7 @@ void Channel::handleEvent(Timestamp receiveTime)
         }
     }
 
-    if (revents_ & (POLLIN | POLLPRI | POLLRDHUP)) // POLLRDHUP ???
+    if (revents_ & (POLLIN | POLLPRI | POLLRDHUP)) 
     {
         if (readCallback_)
         {

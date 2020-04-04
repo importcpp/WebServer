@@ -77,7 +77,13 @@ void TcpConnection::sendInLoop(const std::string &message)
     // 如果输出队列为空，那么可以直接写进输出buffer
     if (!channel_->isWriting() && outputBuffer_.readableBytes() == 0)
     {
+
+#ifdef USE_EPOLL_LT
+        nwrote = ::write(channel_->fd(), message.data(), message.size());
+#else
         nwrote = writeET(channel_->fd(), message.data(), message.size());
+#endif
+
         if (nwrote >= 0)
         {
             if (implicit_cast<size_t>(nwrote) < message.size())
@@ -155,9 +161,12 @@ void TcpConnection::connectEstablished()
     loop_->assertInLoopThread();
     assert(state_ == kConnecting);
     setState(kConnected);
-    channel_->enableReading();
-    // 开启ET模式
+#ifdef USE_EPOLL_LT
+#else
+    // 开启ET模式 -- (这两步顺序不能错)
     channel_->enableEpollET();
+#endif
+    channel_->enableReading();
     connectionCallback_(shared_from_this());
 }
 
@@ -176,9 +185,12 @@ void TcpConnection::connectDestroyed()
 void TcpConnection::handleRead(Timestamp receiveTime)
 {
     int savedErrno = 0;
-    // ssize_t n = inputBuffer_.readFd(channel_->fd(), &savedErrno);
+#ifdef USE_EPOLL_LT
+    ssize_t n = inputBuffer_.readFd(channel_->fd(), &savedErrno);
+#else
     // ET模式读写，直到发生EAGAIN，才返回
     ssize_t n = inputBuffer_.readFdET(channel_->fd(), &savedErrno);
+#endif
     if (n > 0)
     {
         messageCallback_(shared_from_this(), &inputBuffer_, receiveTime);
@@ -203,7 +215,12 @@ void TcpConnection::handleWrite()
     loop_->assertInLoopThread();
     if (channel_->isWriting())
     {
+#ifdef USE_EPOLL_LT
+        ssize_t n = ::write(channel_->fd(), outputBuffer_.peek(), outputBuffer_.readableBytes());
+#else
+        // ET模式读写，直到发生EAGAIN，才返回
         ssize_t n = writeET(channel_->fd(), outputBuffer_.peek(), outputBuffer_.readableBytes());
+#endif
         if (n > 0)
         {
             outputBuffer_.retrieve(n);
@@ -275,6 +292,9 @@ void TcpConnection::handleError()
 #endif
 }
 
+#ifdef USE_EPOLL_LT
+#else
+// ET 模式下处理写事件
 ssize_t writeET(int fd, const char *begin, size_t len)
 {
     ssize_t writesum = 0;
@@ -304,7 +324,6 @@ ssize_t writeET(int fd, const char *begin, size_t len)
             // 暂未考虑其他错误
             else
             {
-                //
                 return -1;
             }
         }
@@ -316,3 +335,4 @@ ssize_t writeET(int fd, const char *begin, size_t len)
     }
     return writesum;
 }
+#endif

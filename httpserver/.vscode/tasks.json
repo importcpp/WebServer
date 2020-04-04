@@ -9,15 +9,16 @@
                 "-g",
                 "-std=c++11",
                 // "-D PCOUT",
+                // "-D USE_SPINLOCK",
+                // "-D USE_LOCKFREEQUEUE",
+                "-D USE_EPOLL_LT",
                 "${file}",
                 "${workspaceFolder}/loop/KEventLoop.cpp",
                 "${workspaceFolder}/loop/KEventLoopThread.cpp",
                 "${workspaceFolder}/loop/KEventLoopThreadPool.cpp",
 
                 "${workspaceFolder}/poller/KChannel.cpp",
-                "${workspaceFolder}/poller/KPoller.cpp",
-                "${workspaceFolder}/poller/KPollPoller.cpp",
-                "${workspaceFolder}/poller/KEPollPoller.cpp",
+                "${workspaceFolder}/poller/KEventManager.cpp",
 
                 "${workspaceFolder}/utils/KTimestamp.cpp",
 

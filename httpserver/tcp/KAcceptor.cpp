@@ -49,7 +49,7 @@ void Acceptor::handleRead()
 {
     loop_->assertInLoopThread();
 
-    for(;;)
+    for (;;)
     {
         // 利用一个 InetAddress 来管理 sockaddr_in
         InetAddress peerAddr(0);
@@ -68,10 +68,10 @@ void Acceptor::handleRead()
         }
         else
         {
-            // if(errno == EAGAIN)
-            // {
-            // }
             break;
         }
+#ifdef USE_EPOLL_LT
+        break;
+#endif
     }
 }

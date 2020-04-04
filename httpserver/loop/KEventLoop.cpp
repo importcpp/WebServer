@@ -1,6 +1,6 @@
 #include "KEventLoop.h"
 #include "../poller/KChannel.h"
-#include "../poller/KDefaultPoller.h"
+#include "../poller/KEventManager.h"
 #include <sys/eventfd.h>
 #include <signal.h>
 
@@ -31,7 +31,7 @@ EventLoop::EventLoop()
       quit_(false),
       callingPendingFunctors_(false),
       threadId_(std::this_thread::get_id()),
-      poller_(Poller::newDefaultPoller(this)),
+      eventmanager_(new EventManager(this)),
       wakeupFd_(createEventfd()),
       wakeupChannel_(new Channel(this, wakeupFd_))
 {
@@ -75,7 +75,7 @@ void EventLoop::loop()
         activeChannels_.clear();
         // 这里poll在轮询中，为阻塞的，想要回调活动事件，必须想办法唤醒
         // muduo这里采用了一个很巧妙的办法，专门用一个文件描述符来进行唤醒
-        pollReturnTime_ = poller_->poll(kPollTimeMs, &activeChannels_);
+        pollReturnTime_ = eventmanager_->poll(kPollTimeMs, &activeChannels_);
         for (auto it = activeChannels_.begin(); it != activeChannels_.end(); ++it)
         {
             (*it)->handleEvent(pollReturnTime_);
@@ -105,14 +105,14 @@ void EventLoop::updateChannel(Channel *channel)
     assert(channel->ownerLoop() == this);
     assertInLoopThread();
     // EventLoop 实际上不负责更新channel
-    poller_->updateChannel(channel);
+    eventmanager_->updateChannel(channel);
 }
 
 void EventLoop::removeChannel(Channel *channel)
 {
     assert(channel->ownerLoop() == this);
     assertInLoopThread();
-    poller_->removeChannel(channel);
+    eventmanager_->removeChannel(channel);
 }
 
 void EventLoop::abortNotInLoopThread()
@@ -158,17 +158,40 @@ void EventLoop::handleRead()
 // 执行装载的的回调函数，下面的处理方法很巧妙
 void EventLoop::doPendingFunctors()
 {
-    std::vector<Functor> functors;
-    callingPendingFunctors_ = true;
     {
+#ifdef USE_LOCKFREEQUEUE
+        callingPendingFunctors_ = true;
+        // 遍历执行回调函数
+        for (;;)
+        {
+            std::shared_ptr<Functor> functor = pendingFunctors_.pop();
+            if (functor != nullptr)
+            {
+                (*functor.get())();
+            }
+            else
+            {
+                break;
+            }
+        }
+#else
+        std::vector<Functor> functors;
+        callingPendingFunctors_ = true;
+#ifdef USE_SPINLOCK
+        spinlock.lock();
+        functors.swap(pendingFunctors_);
+        spinlock.unlock();
+#else
         std::lock_guard<std::mutex> lock(mutex_);
         functors.swap(pendingFunctors_);
-    }
+#endif
+        // 遍历执行回调函数
+        for (auto &functor : functors)
+        {
+            functor();
+        }
 
-    // 遍历执行回调函数
-    for (auto &functor : functors)
-    {
-        functor();
+#endif
     }
 
     callingPendingFunctors_ = false;
@@ -191,8 +214,18 @@ void EventLoop::runInLoop(const Functor &cb)
 void EventLoop::queueInLoop(const Functor &cb)
 {
     {
+#ifdef USE_LOCKFREEQUEUE
+        pendingFunctors_.push(cb);
+#else
+#ifdef USE_SPINLOCK
+        spinlock.lock();
+        pendingFunctors_.push_back(cb);
+        spinlock.unlock();
+#else
         std::lock_guard<std::mutex> lock(mutex_);
         pendingFunctors_.push_back(cb);
+#endif
+#endif
     }
 
     if (!isInLoopThread() || callingPendingFunctors_)

@@ -4,6 +4,11 @@
 #include <atomic>
 #include <vector>
 
+// 自己造轮子
+// http://hg.openjdk.java.net/jdk8u/jdk8u/jdk/file/tip/src/share/classes/java/util/concurrent/ConcurrentLinkedQueue.java
+// 代码整体逻辑来自:
+// https://www.cs.rochester.edu/u/scott/papers/1996_PODC_queues.pdf
+
 template <typename T>
 class LockFreeQueue
 {
@@ -25,11 +30,12 @@ public:
     LockFreeQueue() : head_(new Node()), tail_(head_) {}
     ~LockFreeQueue()
     {
-        // 添加析构
+        // Todo： 完成队列的析构
+        // 暂时好像没有必要
+        // 1. 任务队列与程序生命期相同
+        // 2. 肯定是要完成队列里面所有任务的
     }
 
-    // 代码逻辑来自:
-    // https://www.cs.rochester.edu/u/scott/papers/1996_PODC_queues.pdf
     bool Try_Dequeue(T &data)
     {
         Node *old_head, *old_tail, *first_node;
@@ -40,37 +46,39 @@ public:
             old_tail = tail_;
             first_node = old_head->next_;
 
+            // 下面的工作全是在确保上面三个指针的“一致性”
+            // 1. 保证head_的一致性
             // head_ 指针已移动，重新取 head指针
             if (old_head != head_)
             {
                 continue;
             }
 
-            // 判断是否是空队列，并且
+            // 空队列 或者 全局尾指针落后了？
+            // 落后是指其他线程的已经更新，而当前线程没有更新
             if (old_head == old_tail)
             {
                 if (first_node == nullptr)
                 {
+                    return false;
                 }
+                // 证明全局尾指针没有被更新，尝试更新一下
                 ::__sync_bool_compare_and_swap(&tail_, old_tail, first_node);
                 continue;
             }
-
-            //移动 old_head 指针成功后，取出数据
-            if (::__sync_bool_compare_and_swap(&head_, old_head, first_node) == true)
+            else // 前面的操作都是在确保全局尾指针在全局头指针之后，只有这样才能安全的删除数据
             {
+                // 在CAS前先取出数据，防止其他线程dequeue造成数据的缺失
                 data = first_node->data_;
-                break;
+                // 移动 old_head 指针成功则退出
+                if (::__sync_bool_compare_and_swap(&head_, old_head, first_node))
+                {
+                    break;
+                }
             }
         }
         delete old_head;
         return true;
-    }
-
-    // Todo: 一次性将当前任务取出来，减少调用
-    bool Try_Dequeue_Bunch()
-    {
-        return false;
     }
 
     void Enqueue(const T &data)
@@ -85,23 +93,28 @@ public:
             copy_tail_next = copy_tail->next_;
 
             //如果尾指针已经被移动了，则重新开始
-            // 通过不断循环确保 copy_tail一定是当前所有线程中的尾指针
             if (copy_tail != tail_)
             {
                 continue;
             }
 
-            //如果尾指针的 next 不为NULL，则 fetch 全局尾指针到next
-            if (copy_tail_next != nullptr)
+            // 判断尾指针是否指向最后一个节点
+            if (copy_tail_next == nullptr)
             {
+                if (::__sync_bool_compare_and_swap(&(copy_tail->next_), copy_tail_next, enqueue_node))
+                {
+                    break;
+                }
+            }
+            else 
+            {
+                // 全局尾指针不是指向最后一个节点，就把全局尾指针提前
+                // 全局尾指针不是指向最后一个节点，发生在其他线程已经完成节点添加操作，
+                // 但是并没有更新最后一个节点，此时，当前线程的(tail_和copy_tail是相等的，)
+                // 可以更新全局尾指针copy_tail_next，如果其他线程不更新全局尾指针，
+                // 那么当前线程会不断移动，直到  copy_tail_next == nullptr 为true
                 ::__sync_bool_compare_and_swap(&(tail_), copy_tail, copy_tail_next);
                 continue;
-            }
-
-            //如果加入结点成功，则退出
-            if (::__sync_bool_compare_and_swap(&(copy_tail->next_), copy_tail_next, enqueue_node) == true)
-            {
-                break;
             }
         }
         // 重置尾节点, (也有可能已经被别的线程重置

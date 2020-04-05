@@ -10,7 +10,20 @@
 - Complier: g++ 5.4.0
 - Tools: VScode
 
-## Http version 1
+## Technical points
+
+* 基于Reactor模式搭建网络服务器，面向过程函数式编程
+* 采用非阻塞IO复用模式默认是ET，可在编译器通过指定参数切换为LT模式
+
+## Develop and Fix List
+
+* 2019-12-19 Dev: 基本框架的实现
+* 2020-03-14 Dev: 实现了Epoll ET模式 循环处理Accept、Read和Write事件
+* 2020-03-26 Dev: 定义宏使得WebServer编译时确定Epoll的工作模式(ET/LT)
+
+## Model development
+
+### Http version 1
 
 对于每一个http请求(client)，会有一个fd去处理，v1版本的做法是，每当请求client到达时(即epoll检测到活动事件时)，将此活动fd的任务转交给线程池中的线程去处理
 
@@ -18,7 +31,7 @@
 
 <img src="file/serverarch1.png" alt="serverarch1" style="zoom:50%;" />
 
-## Http version 2
+### Http version 2
 
 这里每次有新任务到达时，就将新任务转交给线程，然后把程序的控制权转交到Epoll上，但是当在高并发状态，连接数太高，就会有很多活动的事件fd, 这是频繁的转交线程也会造成很大的开销
 
@@ -27,7 +40,7 @@
 > Note: 主线程应该如何通知单个线程要开始处理任务了呢？
 >
 > 1. 也就是采用线程间的通信方式（临界区、信号量、事件信号、互斥量）
-> 2. 采用eventfd 的可读事件作为线程间的唤醒机制（类似于无名管道？）
+> 2. 采用eventfd 的可读事件作为线程间的唤醒机制（类似于无名管道）
 
 由此，初步设想已经完成，但是细想发现又不是很现实，比如，一个线程去负责一个client，那在高并发状态下，这是不可能完成的任务，
 
@@ -51,9 +64,7 @@
 
 单线程Server(v2_0)的主要代码可见v2_0 分支，接下来的 Server(v2_1)主要基于v2_0修改，v2_0已经是一个很基础的单线程http server了。
 
-
-
-### version 2_1 (单线程)
+#### version 2_1 (单线程)
 
 在版本v2_0中，代码太过于集中，不利于维护和修改，因此才有了版本v2_1，本版本借鉴了muduo完成
 

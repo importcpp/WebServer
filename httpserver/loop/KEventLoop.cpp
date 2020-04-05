@@ -164,10 +164,14 @@ void EventLoop::doPendingFunctors()
         // 遍历执行回调函数
         for (;;)
         {
-            std::shared_ptr<Functor> functor = pendingFunctors_.pop();
-            if (functor != nullptr)
+            Functor functor;
+            bool flag = pendingFunctors_.Try_Dequeue(functor);
+            if (flag)
             {
-                (*functor.get())();
+                if (functor != nullptr)
+                {
+                    functor();
+                }
             }
             else
             {
@@ -215,7 +219,7 @@ void EventLoop::queueInLoop(const Functor &cb)
 {
     {
 #ifdef USE_LOCKFREEQUEUE
-        pendingFunctors_.push(cb);
+        pendingFunctors_.Enqueue(cb);
 #else
 #ifdef USE_SPINLOCK
         spinlock.lock();

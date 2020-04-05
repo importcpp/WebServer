@@ -28,6 +28,8 @@ public:
         // 添加析构
     }
 
+    // 代码逻辑来自:
+    // https://www.cs.rochester.edu/u/scott/papers/1996_PODC_queues.pdf
     bool Try_Dequeue(T &data)
     {
         Node *old_head, *old_tail, *first_node;
@@ -44,18 +46,16 @@ public:
                 continue;
             }
 
-            // 如果是空队列
-            if (old_head == old_tail && first_node == nullptr)
+            // 判断是否是空队列，并且
+            if (old_head == old_tail)
             {
-                return false;
-            }
-
-            //如果old_tail 指针落后了
-            if (old_head == old_tail && first_node == NULL)
-            {
+                if (first_node == nullptr)
+                {
+                }
                 ::__sync_bool_compare_and_swap(&tail_, old_tail, first_node);
                 continue;
             }
+
             //移动 old_head 指针成功后，取出数据
             if (::__sync_bool_compare_and_swap(&head_, old_head, first_node) == true)
             {
@@ -85,6 +85,7 @@ public:
             copy_tail_next = copy_tail->next_;
 
             //如果尾指针已经被移动了，则重新开始
+            // 通过不断循环确保 copy_tail一定是当前所有线程中的尾指针
             if (copy_tail != tail_)
             {
                 continue;

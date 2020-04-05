@@ -40,7 +40,7 @@
 
 版本一的框架如下图所示：
 
-![v1](https://github.com/importcpp/httpServer/raw/master/file/serverarch1.png)
+<img src="https://github.com/importcpp/httpServer/raw/master/file/serverarch1.png" alt="v1" style="zoom: 33%;" />
 
 ### Http version 2
 
@@ -59,7 +59,7 @@
 
 此时的框架图如下图所示：
 
-![v2](https://github.com/importcpp/httpServer/raw/master/file/serverarch2_0.png)
+<img src="https://github.com/importcpp/httpServer/raw/master/file/serverarch2_0.png" alt="v2" style="zoom:33%;" />
 
 但是直接这样就 单个线程负责多个文件描述符 是不现实的，比如，A线程负责了 a3和a4两个文件描述符，如果主线程应该如何通知 A线程 去处理 a3和a4两个活动fd呢，这里虽然可以想办法实现（将发生活动事件的fd 作为数据写入eventfd，然后再唤醒线程），但是有没有更好的办法呢。
 
@@ -67,7 +67,7 @@
 
 版本二的基本框架如下图所示：
 
-![v3](https://github.com/importcpp/httpServer/raw/master/file/serverarch2.png)
+<img src="https://github.com/importcpp/httpServer/raw/master/file/serverarch2.png" alt="v3" style="zoom: 80%;" />
 
 为了简化处理，接下来的版本V2_1 将完成单线程的http server
 

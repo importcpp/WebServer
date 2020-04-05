@@ -70,11 +70,10 @@ int main(int argc, char *argv[])
     if (argc > 1)
     {
         benchmark = true;
-        // Logger::setLogLevel(Logger::WARN);
         numThreads = atoi(argv[1]);
     }
     EventLoop loop;
-    HttpServer server(&loop, InetAddress(9981), "dummy");
+    HttpServer server(&loop, InetAddress(8888), "httpserver");
     server.setHttpCallback(onRequest);
     server.setThreadNum(numThreads);
     server.start();

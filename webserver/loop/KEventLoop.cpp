@@ -10,7 +10,7 @@ using namespace kback;
 // __thread 变量是每个线程有的一份独立的实体
 // 类似于static 只在编译期初始化
 __thread EventLoop *t_loopInThisThread = 0;
-const int kPollTimeMs = 10000;
+const int kPollTimeMs = 1000;
 
 static int createEventfd()
 {

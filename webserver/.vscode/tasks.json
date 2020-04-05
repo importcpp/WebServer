@@ -16,6 +16,7 @@
                 "${workspaceFolder}/loop/KEventLoop.cpp",
                 "${workspaceFolder}/loop/KEventLoopThread.cpp",
                 "${workspaceFolder}/loop/KEventLoopThreadPool.cpp",
+                "${workspaceFolder}/thread/KThreadPool.cpp",
 
                 "${workspaceFolder}/poller/KChannel.cpp",
                 "${workspaceFolder}/poller/KEventManager.cpp",

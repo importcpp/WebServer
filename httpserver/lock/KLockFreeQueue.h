@@ -2,6 +2,7 @@
 #include "../utils/Knoncopyable.h"
 #include <memory>
 #include <atomic>
+#include <vector>
 
 template <typename T>
 class LockFreeQueue
@@ -18,13 +19,13 @@ private:
     };
 
 private:
-    Node *head_;
-    Node *tail_;
+    Node *head_, *tail_;
 
 public:
     LockFreeQueue() : head_(new Node()), tail_(head_) {}
     ~LockFreeQueue()
     {
+        // 添加析构
     }
 
     bool Try_Dequeue(T &data)
@@ -64,6 +65,12 @@ public:
         }
         delete old_head;
         return true;
+    }
+
+    // Todo: 一次性将当前任务取出来，减少调用
+    bool Try_Dequeue_Bunch()
+    {
+        return false;
     }
 
     void Enqueue(const T &data)

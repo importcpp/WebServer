@@ -158,27 +158,28 @@ void EventLoop::handleRead()
 // 执行装载的的回调函数，下面的处理方法很巧妙
 void EventLoop::doPendingFunctors()
 {
-    {
+
 #ifdef USE_LOCKFREEQUEUE
-        callingPendingFunctors_ = true;
-        // 遍历执行回调函数
-        for (;;)
+    callingPendingFunctors_ = true;
+    // 遍历执行回调函数
+    for (;;)
+    {
+        Functor functor;
+        bool flag = pendingFunctors_.Try_Dequeue(functor);
+        if (flag)
         {
-            Functor functor;
-            bool flag = pendingFunctors_.Try_Dequeue(functor);
-            if (flag)
+            if (functor != nullptr)
             {
-                if (functor != nullptr)
-                {
-                    functor();
-                }
-            }
-            else
-            {
-                break;
+                functor();
             }
         }
+        else
+        {
+            break;
+        }
+    }
 #else
+    {
         std::vector<Functor> functors;
         callingPendingFunctors_ = true;
 #ifdef USE_SPINLOCK
@@ -194,9 +195,8 @@ void EventLoop::doPendingFunctors()
         {
             functor();
         }
-
-#endif
     }
+#endif
 
     callingPendingFunctors_ = false;
 }

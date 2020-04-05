@@ -8,18 +8,29 @@
 
 - OS: Ubuntu 16.04
 - Complier: g++ 5.4.0
-- Tools: VScode
+- Tools: CMake/VScode
 
 ## Technical points
 
-* 基于Reactor模式搭建网络服务器，面向过程函数式编程
-* 采用非阻塞IO复用模式默认是ET，可在编译器通过指定参数切换为LT模式
+* 基于Reactor模式构建网络服务器，编程风格偏向面向过程
+* 采用非阻塞IO，IO复用模式默认是ET，可在编译前通过指定参数切换为LT模式，通过编译期确定工作模式，可以减少运行期不断判断条件造成的负担
+* 线程间的工作模式: 主线程负责Accept请求，然后采用Round-bin分发的方式异步调用其他线程去管理请求端的IO事件
+* 采用智能指针管理对象的资源
+* 实现LockFreeQueue实现任务的异步添加与移除，代替了常规的互斥锁管理临界区的方式
+* ......
 
 ## Develop and Fix List
 
 * 2019-12-19 Dev: 基本框架的实现
+* 2020-0304 Dev: 临界区的保护机制增加自旋锁，用于与互斥锁做性能对比
 * 2020-03-14 Dev: 实现了Epoll ET模式 循环处理Accept、Read和Write事件
 * 2020-03-26 Dev: 定义宏使得WebServer编译时确定Epoll的工作模式(ET/LT)
+* 2020-0404 Important Dev: 临界区的保护机制增加了Lockfree queue，用于与互斥锁做性能对比
+
+## Todo list
+
+* 压力测试(LT模式与ET模式对比，异步唤醒临界区争用性能对比)，补补压力测试理论知识
+* 查查负载均衡模式，与round-bin作对比
 
 ## Model development
 

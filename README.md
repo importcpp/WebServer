@@ -59,7 +59,7 @@
 
 此时的框架图如下图所示：
 
-<img src="file/serverarch2_0.png" alt="serverarch2_0" style="zoom: 50%;" />
+<img src="file/serverarch2_0.png" alt="serverarch2_0" style="zoom: 45%;" />
 
 但是直接这样就 单个线程负责多个文件描述符 是不现实的，比如，A线程负责了 a3和a4两个文件描述符，如果主线程应该如何通知 A线程 去处理 a3和a4两个活动fd呢，这里虽然可以想办法实现（将发生活动事件的fd 作为数据写入eventfd，然后再唤醒线程），但是有没有更好的办法呢。
 

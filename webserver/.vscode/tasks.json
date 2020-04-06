@@ -8,7 +8,7 @@
                 "-I .",
                 "-g",
                 "-std=c++11",
-                // "-D PCOUT",
+                // "-D USE_STD_COUT",
                 // "-D USE_SPINLOCK",
                 "-D NDEBUG",
                 "-D USE_LOCKFREEQUEUE",

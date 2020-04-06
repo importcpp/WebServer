@@ -25,7 +25,7 @@ HttpServer::HttpServer(EventLoop *loop,
 
 void HttpServer::start()
 {
-#ifdef PCOUT
+#ifdef USE_STD_COUT
     std::cout << "LOG_WARN:   "
               << "HttpServer[" << server_.name()
               << "] starts listenning on " << server_.ipPort() << std::endl;

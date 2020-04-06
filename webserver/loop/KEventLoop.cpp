@@ -17,7 +17,7 @@ static int createEventfd()
     int evtfd = ::eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
     if (evtfd < 0)
     {
-#ifdef PCOUT
+#ifdef USE_STD_COUT
         std::cout << "LOG_SYSERR:   "
                   << "Failed in eventfd" << std::endl;
 #endif
@@ -35,13 +35,13 @@ EventLoop::EventLoop()
       wakeupFd_(createEventfd()),
       wakeupChannel_(new Channel(this, wakeupFd_))
 {
-#ifdef PCOUT
+#ifdef USE_STD_COUT
     std::cout << "LOG_TRACE:   "
               << "EventLoop created " << this << " in thread " << threadId_ << std::endl;
 #endif
     if (t_loopInThisThread)
     {
-#ifdef PCOUT
+#ifdef USE_STD_COUT
         std::cout << "LOG_FATAL:   "
                   << "Another EventLoop " << t_loopInThisThread << " exists in this thread " << threadId_ << std::endl;
 #endif
@@ -82,7 +82,7 @@ void EventLoop::loop()
         }
         doPendingFunctors();
     }
-#ifdef PCOUT
+#ifdef USE_STD_COUT
     std::cout << "LOG_TRACE:   "
               << "EventLoop " << this << " stop looping" << std::endl;
 #endif
@@ -117,7 +117,7 @@ void EventLoop::removeChannel(Channel *channel)
 
 void EventLoop::abortNotInLoopThread()
 {
-#ifdef PCOUT
+#ifdef USE_STD_COUT
     std::cerr << "LOG_FATAL:   "
               << "EventLoop::abortNotInLoopThread - EventLoop " << this
               << " was created in threadId_ = " << threadId_
@@ -133,7 +133,7 @@ void EventLoop::wakeup()
     // 判断写入的字节是不是 one对应的字节数
     if (n != sizeof one)
     {
-#ifdef PCOUT
+#ifdef USE_STD_COUT
         std::cout << "LOG_ERROR:   "
                   << "EventLoop::wakeup() writes " << n << " bytes instead of 8" << std::endl;
 #endif
@@ -148,7 +148,7 @@ void EventLoop::handleRead()
     // 判断读取的字节是不是 one对应的字节数
     if (n != sizeof one)
     {
-#ifdef PCOUT
+#ifdef USE_STD_COUT
         std::cout << "LOG_ERROR:   "
                   << "EventLoop::handleRead() reads " << n << " bytes instead of 8";
 #endif

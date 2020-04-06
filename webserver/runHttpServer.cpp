@@ -14,7 +14,7 @@ bool benchmark = false;
 
 void onRequest(const HttpRequest &req, HttpResponse *resp)
 {
-#ifdef PCOUT
+#ifdef USE_STD_COUT
     std::cout << "Headers " << req.methodString() << " " << req.path() << std::endl;
 #endif
     if (!benchmark)
@@ -22,7 +22,7 @@ void onRequest(const HttpRequest &req, HttpResponse *resp)
         const std::map<string, string> &headers = req.headers();
         for (const auto &header : headers)
         {
-#ifdef PCOUT
+#ifdef USE_STD_COUT
 
             std::cout << header.first << ": " << header.second << std::endl;
 #endif

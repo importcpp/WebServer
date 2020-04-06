@@ -23,7 +23,7 @@ EventManager::EventManager(EventLoop *loop)
 {
     if (epollfd_ < 0)
     {
-#ifdef PCOUT
+#ifdef USE_STD_COUT
         std::cout << "LOG_SYSFATAL"
                   << "EventManager::EventManager" << std::endl;
 #endif
@@ -37,7 +37,7 @@ EventManager::~EventManager()
 
 Timestamp EventManager::poll(int timeoutMs, ChannelList *activeChannels)
 {
-#ifdef PCOUT
+#ifdef USE_STD_COUT
     std::cout << "LOG_TRACE"
               << "fd total count " << channels_.size() << std::endl;
 #endif
@@ -49,7 +49,7 @@ Timestamp EventManager::poll(int timeoutMs, ChannelList *activeChannels)
     Timestamp now(Timestamp::now());
     if (numEvents > 0)
     {
-#ifdef PCOUT
+#ifdef USE_STD_COUT
         std::cout << "LOG_TRACE" << numEvents << " events happended" << std::endl;
 #endif
         fillActiveChannels(numEvents, activeChannels);
@@ -60,7 +60,7 @@ Timestamp EventManager::poll(int timeoutMs, ChannelList *activeChannels)
     }
     else if (numEvents == 0)
     {
-#ifdef PCOUT
+#ifdef USE_STD_COUT
         std::cout << "LOG_TRACE"
                   << " nothing happended" << std::endl;
 #endif
@@ -70,7 +70,7 @@ Timestamp EventManager::poll(int timeoutMs, ChannelList *activeChannels)
         if (savedErrno != EINTR)
         {
             errno = savedErrno;
-#ifdef PCOUT
+#ifdef USE_STD_COUT
             std::cout << "LOG_SYSERR"
                       << "EventManager::poll()" << std::endl;
 #endif
@@ -95,7 +95,7 @@ void EventManager::updateChannel(Channel *channel)
 {
     assertInLoopThread();
     const int index = channel->index();
-#ifdef PCOUT
+#ifdef USE_STD_COUT
     std::cout << "LOG_TRACE"
               << "fd = " << channel->fd()
               << " events = " << channel->events() << " index = " << index << std::endl;
@@ -142,7 +142,7 @@ void EventManager::removeChannel(Channel *channel)
 {
     assertInLoopThread();
     int fd = channel->fd();
-#ifdef PCOUT
+#ifdef USE_STD_COUT
     std::cout << "LOG_TRACE:   "
               << "fd = " << fd << std::endl;
 #endif
@@ -169,7 +169,7 @@ void EventManager::update(int operation, Channel *channel)
     event.events = channel->events();
     event.data.ptr = channel;
     int fd = channel->fd();
-#ifdef PCOUT
+#ifdef USE_STD_COUT
     std::cout << "LOG_TRACE"
               << "epoll_ctl op = " << operationToString(operation)
               << " fd = " << fd << " event = { " << channel->eventsToString() << " }";
@@ -178,14 +178,14 @@ void EventManager::update(int operation, Channel *channel)
     {
         if (operation == EPOLL_CTL_DEL)
         {
-#ifdef PCOUT
+#ifdef USE_STD_COUT
             std::cout << "LOG_SYSERR"
                       << "epoll_ctl op =" << operationToString(operation) << " fd =" << fd << std::endl;
 #endif
         }
         else
         {
-#ifdef PCOUT
+#ifdef USE_STD_COUT
             std::cout << "LOG_SYSFATAL"
                       << "epoll_ctl op =" << operationToString(operation) << " fd =" << fd;
 #endif

@@ -62,7 +62,7 @@ void TcpServer::newConnection(int sockfd, const InetAddress &peerAddr)
     snprintf(buf, sizeof buf, "#%d", nextConnId_);
     ++nextConnId_;
     std::string connName = name_ + buf;
-#ifdef PCOUT
+#ifdef USE_STD_COUT
     std::cout << "LOG_INFO:   "
               << "TcpServer::newConnection [" << name_
               << "] - new connection [" << connName
@@ -90,7 +90,7 @@ void TcpServer::removeConnection(const TcpConnectionPtr &conn)
 void TcpServer::removeConnectionInLoop(const TcpConnectionPtr &conn)
 {
     loop_->assertInLoopThread();
-#ifdef PCOUT
+#ifdef USE_STD_COUT
 
     std::cout << "LOG_INFO:   "
               << "TcpServer::removeConnection [" << name_

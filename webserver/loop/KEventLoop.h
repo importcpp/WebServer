@@ -42,14 +42,10 @@ public:
 
     // 如果用户在当前IO线程调用这个函数，回调会同步进行;
     // 如果用户在其他线程调用runInLoop(), cb会被加入队列，IO线程会被唤醒来调用这个Functor
-    /// Safe to call from other threads.
     void runInLoop(const Functor &cb);
-    /// Queues callback in the loop thread. Runs after finish pooling.
-    /// Safe to call from other threads.
     // note: 将cb放入队列，并在必要时唤醒IO线程
     void queueInLoop(const Functor &cb);
 
-    // internal use only
     void wakeup();
     void updateChannel(Channel *channel);
     void removeChannel(Channel *channel);

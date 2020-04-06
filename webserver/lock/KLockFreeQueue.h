@@ -43,7 +43,8 @@ public:
         {
             // 取出头指针，尾指针，和第一个元素的指针
             old_head = head_;
-            old_tail = tail_;
+            old_tail = tail_; // 前面两步的顺序非常重要，一定要在获取old_tail之前获取old_head
+                              // 保证old_head_不落后于old_tail
             first_node = old_head->next_;
 
             // 下面的工作全是在确保上面三个指针的“一致性”
@@ -54,6 +55,7 @@ public:
                 continue;
             }
 
+            // 2. 保证尾指针落后于头指针 (尾指针与全局尾指针部分一致性保持)
             // 空队列 或者 全局尾指针落后了？
             // 落后是指其他线程的已经更新，而当前线程没有更新
             if (old_head == old_tail)
@@ -106,7 +108,7 @@ public:
                     break;
                 }
             }
-            else 
+            else
             {
                 // 全局尾指针不是指向最后一个节点，就把全局尾指针提前
                 // 全局尾指针不是指向最后一个节点，发生在其他线程已经完成节点添加操作，

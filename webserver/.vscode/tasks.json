@@ -10,6 +10,7 @@
                 "-std=c++11",
                 // "-D PCOUT",
                 // "-D USE_SPINLOCK",
+                "-D NDEBUG",
                 "-D USE_LOCKFREEQUEUE",
                 "-D USE_EPOLL_LT",
                 "${file}",

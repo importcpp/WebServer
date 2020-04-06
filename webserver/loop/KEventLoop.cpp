@@ -123,7 +123,7 @@ void EventLoop::abortNotInLoopThread()
               << " was created in threadId_ = " << threadId_
               << ", current thread id = " << std::this_thread::get_id() << std::endl;
 #endif
-    // std::abort();
+    std::abort();
 }
 
 void EventLoop::wakeup()

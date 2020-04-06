@@ -27,7 +27,7 @@ namespace kback
 
 class Channel;
 class EventManager;
-
+class AsyncWaker;
 class EventLoop : noncopyable
 {
 public:
@@ -84,8 +84,7 @@ private:
     void doPendingFunctors();
     bool callingPendingFunctors_;
 
-    int wakeupFd_;
-    std::unique_ptr<Channel> wakeupChannel_;
+    std::unique_ptr<AsyncWaker> asyncwaker;
 
 #ifdef USE_LOCKFREEQUEUE
     LockFreeQueue<Functor> pendingFunctors_;

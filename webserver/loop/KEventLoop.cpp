@@ -1,6 +1,7 @@
 #include "KEventLoop.h"
 #include "../poller/KChannel.h"
 #include "../poller/KEventManager.h"
+#include "KAsyncWaker.h"
 #include <sys/eventfd.h>
 #include <signal.h>
 
@@ -12,28 +13,13 @@ using namespace kback;
 __thread EventLoop *t_loopInThisThread = 0;
 const int kPollTimeMs = 1000;
 
-static int createEventfd()
-{
-    int evtfd = ::eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
-    if (evtfd < 0)
-    {
-#ifdef USE_STD_COUT
-        std::cout << "LOG_SYSERR:   "
-                  << "Failed in eventfd" << std::endl;
-#endif
-        abort();
-    }
-    return evtfd;
-}
-
 EventLoop::EventLoop()
     : looping_(false),
       quit_(false),
       callingPendingFunctors_(false),
       threadId_(std::this_thread::get_id()),
       eventmanager_(new EventManager(this)),
-      wakeupFd_(createEventfd()),
-      wakeupChannel_(new Channel(this, wakeupFd_))
+      asyncwaker(new AsyncWaker(this))
 {
 #ifdef USE_STD_COUT
     std::cout << "LOG_TRACE:   "
@@ -50,16 +36,11 @@ EventLoop::EventLoop()
     {
         t_loopInThisThread = this;
     }
-
-    wakeupChannel_->setReadCallback(std::bind(&EventLoop::handleRead, this));
-    // 保持wakeupfd 是可读的
-    wakeupChannel_->enableReading();
 }
 
 EventLoop::~EventLoop()
 {
     assert(!looping_);
-    ::close(wakeupFd_);
     t_loopInThisThread = nullptr;
 }
 
@@ -94,7 +75,7 @@ void EventLoop::quit()
     quit_ = true;
     if (!isInLoopThread())
     {
-        wakeup();
+        asyncwaker->wakeup();
     }
 }
 
@@ -126,34 +107,8 @@ void EventLoop::abortNotInLoopThread()
     std::abort();
 }
 
-void EventLoop::wakeup()
-{
-    uint64_t one = 1;
-    ssize_t n = ::write(wakeupFd_, &one, sizeof one);
-    // 判断写入的字节是不是 one对应的字节数
-    if (n != sizeof one)
-    {
-#ifdef USE_STD_COUT
-        std::cout << "LOG_ERROR:   "
-                  << "EventLoop::wakeup() writes " << n << " bytes instead of 8" << std::endl;
-#endif
-    }
-}
 
-void EventLoop::handleRead()
-{
-    // 和wakeup函数对应，wakeup函数实际上是写事件，handleRead为对应的读事件
-    uint64_t one = 1;
-    ssize_t n = ::read(wakeupFd_, &one, sizeof one);
-    // 判断读取的字节是不是 one对应的字节数
-    if (n != sizeof one)
-    {
-#ifdef USE_STD_COUT
-        std::cout << "LOG_ERROR:   "
-                  << "EventLoop::handleRead() reads " << n << " bytes instead of 8";
-#endif
-    }
-}
+
 
 // 执行装载的的回调函数，下面的处理方法很巧妙
 void EventLoop::doPendingFunctors()
@@ -234,6 +189,6 @@ void EventLoop::queueInLoop(const Functor &cb)
 
     if (!isInLoopThread() || callingPendingFunctors_)
     {
-        wakeup();
+        asyncwaker->wakeup();
     }
 }

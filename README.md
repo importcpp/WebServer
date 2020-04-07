@@ -34,8 +34,10 @@
 
 * (Before 4.10) 压力测试(LT模式与ET模式对比，异步唤醒临界区争用性能对比)，补补压力测试理论知识
 * (Before 4.16)实现定时器功能 (先小根堆试试，毕竟直接调库，然后写红黑树，可以参照Nginx，最后实现下淘宝Tengine中的四叉最小堆)
-* (Before 4.20)查查负载均衡模式，与round-bin作对比
-* (Before 4.25)异步唤醒机制采用管道 用于 与eventfd性能对比
+* (Before 4.23)添加tcp易产生粘包的解决方案
+* (Before 4.27)查查负载均衡模式，与round-bin作对比
+* (Before 5.3)异步唤醒机制采用管道 用于 与eventfd性能对比
+* (Before ...) 多线程日志
 
 ## Model development
 

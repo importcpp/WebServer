@@ -86,40 +86,45 @@ public:
     void Enqueue(const T &data)
     {
         Node *enqueue_node = new Node(data);
-        Node *copy_tail, *copy_tail_next;
+        Node *old_tail, *old_tail_next;
 
         for (;;)
         {
             //先取一下尾指针和尾指针的next
-            copy_tail = tail_;
-            copy_tail_next = copy_tail->next_;
+            old_tail = tail_;
+            old_tail_next = old_tail->next_;
 
             //如果尾指针已经被移动了，则重新开始
-            if (copy_tail != tail_)
+            if (old_tail != tail_)
             {
                 continue;
             }
 
             // 判断尾指针是否指向最后一个节点
-            if (copy_tail_next == nullptr)
+            if (old_tail_next == nullptr)
             {
-                if (::__sync_bool_compare_and_swap(&(copy_tail->next_), copy_tail_next, enqueue_node))
+                if (::__sync_bool_compare_and_swap(&(old_tail->next_), old_tail_next, enqueue_node))
                 {
                     break;
                 }
             }
             else
             {
-                // 全局尾指针不是指向最后一个节点，就把全局尾指针提前
+                // 全局尾指针不是指向最后一个节点，就把全局尾指针向后移动
+
                 // 全局尾指针不是指向最后一个节点，发生在其他线程已经完成节点添加操作，
-                // 但是并没有更新最后一个节点，此时，当前线程的(tail_和copy_tail是相等的，)
-                // 可以更新全局尾指针copy_tail_next，如果其他线程不更新全局尾指针，
-                // 那么当前线程会不断移动，直到  copy_tail_next == nullptr 为true
-                ::__sync_bool_compare_and_swap(&(tail_), copy_tail, copy_tail_next);
+                // 但是并没有更新最后一个节点，此时，当前线程的(tail_和old_tail是相等的，)
+                // 可以更新全局尾指针为old_tail_next，如果其他线程不更新全局尾指针，
+                // 那么当前线程会不断移动，直到  old_tail_next == nullptr 为true
+
+                // 为什么这里不直接Continue 原因是: 如果其他线程添加了节点，但是并没有更新
+                // 全局尾节点，就会导致所有的线程原地循环等待，所以每一个线程必须要有一些
+                // “主动的操作” 去获取尾节点，这种思想在 dequeue的时候也有体现
+                ::__sync_bool_compare_and_swap(&(tail_), old_tail, old_tail_next);
                 continue;
             }
         }
-        // 重置尾节点, (也有可能已经被别的线程重置
-        ::__sync_bool_compare_and_swap(&tail_, copy_tail, enqueue_node);
+        // 重置尾节点, (也有可能已经被别的线程重置，那么当前线程就不用管了
+        ::__sync_bool_compare_and_swap(&tail_, old_tail, enqueue_node);
     }
 };

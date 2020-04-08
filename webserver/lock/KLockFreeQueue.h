@@ -64,7 +64,7 @@ public:
                 {
                     return false;
                 }
-                // 证明全局尾指针没有被更新，尝试更新一下
+                // 证明全局尾指针没有被更新，尝试更新一下 “主动操作”
                 ::__sync_bool_compare_and_swap(&tail_, old_tail, first_node);
                 continue;
             }

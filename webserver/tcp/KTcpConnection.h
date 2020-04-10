@@ -1,9 +1,12 @@
 #pragma once
-
 #include "../utils/KCallbacks.h"
 #include "../utils/Knoncopyable.h"
 #include "../utils/KTimestamp.h"
-#include "KBuffer.h"
+#ifdef USE_RINGBUFFER
+#include "../tcp/KRingBuffer.h"
+#else
+#include "../tcp/KBuffer.h"
+#endif
 #include "KInetAddress.h"
 #include <memory>
 #include <string>
@@ -80,10 +83,10 @@ public:
     // 只在TcpServer接受新连接的时候调用
     void connectEstablished();
     // 只在TcpServer移除连接的时候调用
-    void connectDestroyed(); 
+    void connectDestroyed();
 
 private:
-    // 通过状态机来表示tcp的连接状态 
+    // 通过状态机来表示tcp的连接状态
     enum StateE
     {
         kConnecting,
@@ -112,9 +115,9 @@ private:
     MessageCallback messageCallback_;
     WriteCompleteCallback writeCompleteCallback_;
     CloseCallback closeCallback_;
+
     Buffer inputBuffer_;
     Buffer outputBuffer_;
-
     boost::any context_;
 };
 

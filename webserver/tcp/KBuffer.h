@@ -1,3 +1,5 @@
+#ifdef USE_RINGBUFFER
+#else
 #pragma once
 #include "../utils/Kcopyable.h"
 
@@ -153,6 +155,12 @@ public:
     /// 将数据读入buffer, 适合ET
     ssize_t readFdET(int fd, int *savedErrno);
 
+    /// 将数据读出buffer, 适合LT
+    ssize_t writeFd(int fd, int *savedErrno);
+
+    /// 将数据读出buffer, 适合ET
+    ssize_t writeFdET(int fd, int *savedErrno);
+
 private:
     char *begin()
     {
@@ -198,3 +206,5 @@ private:
 };
 
 } // namespace kback
+
+#endif

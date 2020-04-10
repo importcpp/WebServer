@@ -1,3 +1,5 @@
+#ifdef USE_RINGBUFFER
+#else
 #include "KBuffer.h"
 #include "KSocketsOps.h"
 // #include "logging/KLogging.h"
@@ -5,6 +7,7 @@
 #include <errno.h>
 #include <memory.h>
 #include <sys/uio.h>
+#include <unistd.h>
 
 using namespace kback;
 
@@ -92,3 +95,60 @@ ssize_t Buffer::readFd(int fd, int *savedErrno)
     }
     return n;
 }
+
+ssize_t Buffer::writeFd(int fd, int *savedErrno)
+{
+    // 从可读位置开始读取
+    ssize_t n = ::write(fd, peek(), readableBytes());
+
+    if(n > 0)
+    {
+        retrieve(n);
+    }
+    return 0;
+}
+
+#ifdef USE_EPOLL_LT
+#else
+// ET 模式下处理写事件
+ssize_t Buffer::writeFdET(int fd, int *savedErrno)
+{
+    ssize_t writesum = 0;
+    
+    for (;;)
+    {
+        ssize_t n = ::write(fd, peek(), readableBytes());
+        if (n > 0)
+        {
+            writesum += n;
+            retrieve(n); // 更新可读索引
+            if (readableBytes() == 0)
+            {
+                return writesum;
+            }
+        }
+        else if (n < 0)
+        {
+            if (errno == EAGAIN) //系统缓冲区满，非阻塞返回
+            {
+#ifdef USE_STD_COUT
+                std::cout << "ET mode: errno == EAGAIN" << std::endl;
+#endif
+                break;
+            }
+            // 暂未考虑其他错误
+            else
+            {
+                return -1;
+            }
+        }
+        else
+        {
+            // 返回0的情况，查看write的man，可以发现，一般是不会返回0的
+            return 0;
+        }
+    }
+    return writesum;
+}
+#endif
+#endif // USE_RINGBUFFER

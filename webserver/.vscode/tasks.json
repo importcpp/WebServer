@@ -13,6 +13,7 @@
                 "-D NDEBUG",
                 "-D USE_LOCKFREEQUEUE",
                 "-D USE_EPOLL_LT",
+                "-D USE_RINGBUFFER",
                 "${file}",
                 "${workspaceFolder}/loop/KEventLoop.cpp",
                 "${workspaceFolder}/loop/KEventLoopThread.cpp",
@@ -32,6 +33,7 @@
                 "${workspaceFolder}/tcp/KTcpServer.cpp",
                 "${workspaceFolder}/tcp/KTcpConnection.cpp",
                 "${workspaceFolder}/tcp/KBuffer.cpp",
+                "${workspaceFolder}/tcp/KRingBuffer.cpp",
 
                 // http
                 "${workspaceFolder}/http/KHttpResponse.cpp",

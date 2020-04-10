@@ -215,15 +215,17 @@ void TcpConnection::handleWrite()
     loop_->assertInLoopThread();
     if (channel_->isWriting())
     {
+        int savedErrno = 0;
 #ifdef USE_EPOLL_LT
-        ssize_t n = ::write(channel_->fd(), outputBuffer_.peek(), outputBuffer_.readableBytes());
+         ssize_t n = outputBuffer_.writeFd(channel_->fd(), &savedErrno);
 #else
         // ET模式读写，直到发生EAGAIN，才返回
-        ssize_t n = writeET(channel_->fd(), outputBuffer_.peek(), outputBuffer_.readableBytes());
+        ssize_t n = outputBuffer_.writeFdET(channel_->fd(), &savedErrno);
 #endif
         if (n > 0)
         {
-            outputBuffer_.retrieve(n);
+            // retrieve过程(readIndex的设置)改为在write读取时就完成
+            // outputBuffer_.retrieve(n);
             if (outputBuffer_.readableBytes() == 0)
             {
                 channel_->disableWriting();

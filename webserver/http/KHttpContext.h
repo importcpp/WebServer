@@ -6,7 +6,6 @@
 
 namespace kback
 {
-
 class Buffer;
 
 class HttpContext : public copyable
@@ -57,6 +56,8 @@ private:
 
     HttpRequestParseState state_;
     HttpRequest request_;
+
+    static const char kCRLF[];
 };
 
-} // namespace muduo
+} // namespace kback

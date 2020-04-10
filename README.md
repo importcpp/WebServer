@@ -1,5 +1,7 @@
 # Webserver
 
+[![Build Status](https://travis-ci.org/linyacool/WebServer.svg?branch=master)](https://travis-ci.org/linyacool/WebServer) [![license](https://img.shields.io/github/license/mashape/apistatus.svg)](https://opensource.org/licenses/MIT)
+
 ## Introduction
 
 本项目实现了一个基于Reactor模式的Web服务器, 支持Http长连接，可响应Get请求
@@ -43,6 +45,6 @@
 
 ## Model Architecture
 
-本服务器采用了事件循环 + 非阻塞IO的主题架构，通过事件驱动和事件回调来实现业务逻辑。事件循环用于做事件通知，如果有新的连接被Accept，则把新连接的socket对象的管理工作转交给其他线程。模型的整体架构如下图所示，模型的架构发展过程可见[History]().
+本服务器采用了事件循环 + 非阻塞IO的主题架构，通过事件驱动和事件回调来实现业务逻辑。事件循环用于做事件通知，如果有新的连接被Accept，则把新连接的socket对象的管理工作转交给其他线程。模型的整体架构如下图所示，模型的架构发展过程可见[History](https://github.com/importcpp/WebServer/blob/master/History.md).
 
 <img src="https://github.com/importcpp/httpServer/raw/master/file/serverarch2.png" alt="v3" style="zoom: 80%;" />

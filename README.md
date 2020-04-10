@@ -6,7 +6,7 @@
 
 本项目实现了一个基于Reactor模式的Web服务器, 支持Http长连接，可响应Get请求
 
-## Enviroment
+## Environment
 
 - OS: Ubuntu 16.04
 - Complier: g++ 5.4.0

@@ -17,9 +17,9 @@
 * 基于Reactor模式构建网络服务器，编程风格偏向面向过程
 * 采用**非阻塞IO**，IO复用模式默认是**ET**，可在编译前通过指定参数切换为LT模式，通过编译期确定工作模式，可以减少运行期不断判断条件造成的负担
 * 线程间的工作模式: 主线程负责Accept请求，然后采用**Round-bin分发**的方式异步调用其他线程去管理请求端的IO事件
-* 利用**AsyncWaker类**(使用eventfd)实现线程间的异步唤醒
-* **实现LockFreeQueue用于任务的异步添加与移除**，代替了常规的互斥锁管理临界区的方式 [这里的Lock free queue并没有解决ABA问题，但是针对这里单生产者单消费者模型，不会发生ABA问题]
-* 实现**环形缓冲区**作为Tcp读取数据和写入数据的缓冲类，使得数据被读取之后不需要移动其余元素的位置来在尾部腾出空间
+* 利用**[AsyncWaker类](https://github.com/importcpp/WebServer/blob/master/webserver/loop/KAsyncWaker.h)**(使用eventfd)实现线程间的异步唤醒
+* **实现[LockFreeQueue](https://github.com/importcpp/WebServer/blob/master/webserver/lock/KLockFreeQueue.h)用于任务的异步添加与移除**，代替了常规的互斥锁管理临界区的方式 [这里的Lock free queue并没有解决ABA问题，但是针对这里单生产者单消费者模型，不会发生ABA问题]
+* 实现**[环形缓冲区](https://github.com/importcpp/WebServer/blob/master/webserver/tcp/KRingBuffer.h)**作为Tcp读取数据和写入数据的缓冲类，使得数据被读取之后不需要移动其余元素的位置来在尾部腾出空间
 * 采用智能指针管理对象的资源
 * ......
 
@@ -28,9 +28,9 @@
 * 2019-12-19 Dev: 基本框架的实现
 * 2020-03-04 Dev: 临界区的保护机制增加自旋锁，用于与互斥锁做性能对比
 * 2020-03-14 Dev: 实现了Epoll ET模式 循环处理Accept、Read和Write事件
-* 2020-03-26 Dev: 定义宏使得WebServer编译时确定Epoll的工作模式(ET/LT)
-* 2020-04-04 **Important Dev:** 针对单生产者单消费者模型的特点，临界区的保护机制增加了Lockfree queue，用于与互斥锁做性能对比
-* 2020-04-10 **Important Dev:** 针对muduo原本的Buffer类实现内部挪滕，增加数据拷贝开销的问题，实现了环形缓冲区类！
+* 2020-03-26 Dev: 定义宏使得WebServer编译时确定Epoll的工作模式(ET/LT)！通过宏定义切换，方便压测对比实验
+* 2020-04-04 **Important Dev:** 针对单生产者单消费者模型的特点，临界区的保护机制增加了Lockfree queue，用于与互斥锁做性能对比！目前的Lockfree queue，暂未解决CAS问题，后期会利用Hazard pointer解决。
+* 2020-04-10 **Important Dev:** 针对muduo原本的Buffer类实现内部挪滕，增加数据拷贝开销的问题，实现了环形缓冲区类！设计的RingBuffer类的接口与Muduo原本的`vector<char>`接口保持一致，目前使用编译期宏定义的方式切换，方便之后做压测对比。之后会考虑设计一个KBuffer纯虚类，然后将RingBuffer和Muduo的Buffer作为作为KBuffer子类，利用C++多态，使用基类的指针指向子类的对象，这样来切换真正所使用的Buffer类.
 
 ## Todo list
 

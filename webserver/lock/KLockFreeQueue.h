@@ -75,7 +75,8 @@ public:
                 // 移动 old_head 指针成功则退出
                 if (::__sync_bool_compare_and_swap(&head_, old_head, first_node))
                 {
-                    break;
+                    // break;
+                    return false;
                 }
             }
         }

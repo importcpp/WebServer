@@ -43,8 +43,15 @@
 * (Before 5.3) 异步唤醒机制采用管道 用于 与eventfd性能对比
 * (Before ...) 多线程日志
 
+
+
 ## Model Architecture
 
 本服务器采用了事件循环 + 非阻塞IO的主题架构，通过事件驱动和事件回调来实现业务逻辑。事件循环用于做事件通知，如果有新的连接被Accept，则把新连接的socket对象的管理工作转交给其他线程。模型的整体架构如下图所示，模型的架构发展过程可见[History](https://github.com/importcpp/WebServer/blob/master/History.md).
 
 <img src="https://github.com/importcpp/httpServer/raw/master/file/serverarch2.png" alt="v3" style="zoom: 80%;" />
+
+## How to improve
+
+* 无锁队列任务调度是在主线程与IO线程中的其中一个线程之间进行的，也就是说这里是使用单生产者单消费者模型，其实可以改成单生产者多消费者模型，即主线程负责将任务enqueue到任务队列中，通知IO线程，然后空闲的IO线程们“主动”将任务从无锁任务队列中取出来，因为我这里还没有解决无锁队列容易产生的CAS问题(解决方法可以用引用计数或者Hazard Point)，所以暂时没有办法实现单生产者多消费者模型. 现成的优质的适用于单生产者多消费者模型的无锁队列有[concurrentqueue](https://github.com/cameron314/concurrentqueue)和 boost中的 [lockfreequeue]( https://www.boost.org/)
+

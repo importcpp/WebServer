@@ -13,7 +13,7 @@
                 "-D NDEBUG",
                 "-D USE_LOCKFREEQUEUE",
                 "-D USE_EPOLL_LT",
-                "-D USE_RINGBUFFER",
+                // "-D USE_RINGBUFFER",
                 "${file}",
                 "${workspaceFolder}/loop/KEventLoop.cpp",
                 "${workspaceFolder}/loop/KEventLoopThread.cpp",

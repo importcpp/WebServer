@@ -17,9 +17,9 @@
 * 基于Reactor模式构建网络服务器，编程风格偏向面向过程
 * 采用**非阻塞IO**，IO复用模式默认是**ET**，可在编译前通过指定参数切换为LT模式，通过编译期确定工作模式，可以减少运行期不断判断条件造成的负担
 * 线程间的工作模式: 主线程负责Accept请求，然后采用**Round-bin分发**的方式异步调用其他线程去管理请求端的IO事件
-* 利用**[AsyncWaker类](https://github.com/importcpp/WebServer/blob/master/webserver/loop/KAsyncWaker.h)**(使用eventfd)实现线程间的异步唤醒
+* 利用[AsyncWaker类](https://github.com/importcpp/WebServer/blob/master/webserver/loop/KAsyncWaker.h)(使用eventfd)实现线程间的异步唤醒
 * **实现[LockFreeQueue](https://github.com/importcpp/WebServer/blob/master/webserver/lock/KLockFreeQueue.h)用于任务的异步添加与移除**，代替了常规的互斥锁管理临界区的方式 [这里的Lock free queue并没有解决ABA问题，但是针对这里单生产者单消费者模型，不会发生ABA问题]
-* 实现**[环形缓冲区](https://github.com/importcpp/WebServer/blob/master/webserver/tcp/KRingBuffer.h)**作为Tcp读取数据和写入数据的缓冲类，使得数据被读取之后不需要移动其余元素的位置来在尾部腾出空间，针对环形缓冲区读或者写空间可能会出现不连续的情况，在Read和Write的处理上，使用了readv和writev系统调用读取不连续的内存(只需要一次系统调用)，解决了系统调用和拷贝带来的开销
+* 实现[环形缓冲区](https://github.com/importcpp/WebServer/blob/master/webserver/tcp/KRingBuffer.h)作为Tcp读取数据和写入数据的缓冲类，使得数据被读取之后不需要移动其余元素的位置来在尾部腾出空间，针对环形缓冲区读或者写空间可能会出现不连续的情况，在Read和Write的处理上，使用了readv和writev系统调用读取不连续的内存(只需要一次系统调用)，解决了系统调用和拷贝带来的开销
 * 采用智能指针管理对象的资源
 * ......
 
@@ -50,6 +50,15 @@
 本服务器采用了事件循环 + 非阻塞IO的主题架构，通过事件驱动和事件回调来实现业务逻辑。事件循环用于做事件通知，如果有新的连接被Accept，则把新连接的socket对象的管理工作转交给其他线程。模型的整体架构如下图所示，模型的架构发展过程可见[History](https://github.com/importcpp/WebServer/blob/master/History.md).
 
 <img src="https://github.com/importcpp/httpServer/raw/master/file/serverarch2.png" alt="v3" style="zoom: 80%;" />
+
+​	
+
+## Server Performance
+
+* 暂时不放图(等定时器完成)
+* 使用Ringbuffer减少数据的拷贝拷贝次数，在一分钟内测试1000个并发连接，使用RingBuffer使得QPS提升10%
+
+
 
 ## How to improve
 

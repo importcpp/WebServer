@@ -108,8 +108,6 @@ void EventLoop::abortNotInLoopThread()
 }
 
 
-
-
 // 执行装载的的回调函数，下面的处理方法很巧妙
 void EventLoop::doPendingFunctors()
 {

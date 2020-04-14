@@ -10,26 +10,19 @@
 using namespace kback;
 
 extern char favicon[555];
-bool benchmark = false;
 
 void onRequest(const HttpRequest &req, HttpResponse *resp)
 {
-#ifdef USE_STD_COUT
-    std::cout << "Headers " << req.methodString() << " " << req.path() << std::endl;
-#endif
-    if (!benchmark)
+
+    if (req.path() == "/hello")
     {
-        const std::map<string, string> &headers = req.headers();
-        for (const auto &header : headers)
-        {
-#ifdef USE_STD_COUT
-
-            std::cout << header.first << ": " << header.second << std::endl;
-#endif
-        }
+        resp->setStatusCode(HttpResponse::k200Ok);
+        resp->setStatusMessage("OK");
+        resp->setContentType("text/plain");
+        resp->addHeader("Server", "Muduo");
+        resp->setBody("hello, world!\n");
     }
-
-    if (req.path() == "/")
+    else if (req.path() == "/")
     {
         resp->setStatusCode(HttpResponse::k200Ok);
         resp->setStatusMessage("OK");
@@ -48,14 +41,6 @@ void onRequest(const HttpRequest &req, HttpResponse *resp)
         resp->setContentType("image/png");
         resp->setBody(string(favicon, sizeof favicon));
     }
-    else if (req.path() == "/hello")
-    {
-        resp->setStatusCode(HttpResponse::k200Ok);
-        resp->setStatusMessage("OK");
-        resp->setContentType("text/plain");
-        resp->addHeader("Server", "Muduo");
-        resp->setBody("hello, world!\n");
-    }
     else
     {
         resp->setStatusCode(HttpResponse::k404NotFound);
@@ -69,7 +54,6 @@ int main(int argc, char *argv[])
     int numThreads = 0;
     if (argc > 1)
     {
-        benchmark = true;
         numThreads = atoi(argv[1]);
     }
     EventLoop loop;

@@ -34,14 +34,13 @@
 
 ## Todo list
 
-**Update in 20-04-07**
+**Update in 20-04-14**
 
-* (Before 4.16) 实现定时器功能 (先小根堆试试，毕竟直接调库，然后写红黑树，可以参照Nginx，最后实现下淘宝Tengine中的四叉最小堆)
-* (Before ***) 压力测试(LT模式与ET模式对比，异步唤醒临界区争用性能对比)，补补压力测试理论知识
-* (Before 4.23) 添加tcp易产生粘包的解决方案
-* (Before 4.27) 查查负载均衡模式，与round-bin作对比
-* (Before 5.3) 异步唤醒机制采用管道 用于 与eventfd性能对比
+* (Before ...) 添加tcp易产生粘包的解决方案
+* (Before ...) 查查负载均衡模式，与round-bin作对比
+* (Before ...) 异步唤醒机制采用管道 用于 与eventfd性能对比
 * (Before ...) 多线程日志
+* (Before ...) 实现定时器功能 (先小根堆试试，毕竟直接调库，然后写红黑树，可以参照Nginx，最后实现下淘宝Tengine中的四叉最小堆)
 
 
 
@@ -55,10 +54,31 @@
 
 ## Server Performance
 
-* 暂时不放图(等定时器完成)
 * 使用Ringbuffer减少数据的拷贝拷贝次数，在一分钟内测试1000个并发连接，使用RingBuffer使得QPS提升10%
 
+### Simple Comparison
 
+压力测试的使用Webench，来自[linya](https://github.com/linyacool/WebServer)，谢谢！！！这里先做一个简要的对比，后期慢慢的详细对比，写一个更完整的文案
+
+|      | [Muduo](https://github.com/chenshuo/muduo) | Mine  |
+| :--: | :----------------------------------------: | :---: |
+| QPS  |                   115111                   | 94230 |
+
+这里只对长连接进行测试，下图是测试结果
+
+* My Webserver测试结果
+
+![mine_qps](/home/george/dev_ws/httpserver/file/mine_qps.png)
+
+* Muduo测试结果
+
+![muduo_qps](/home/george/dev_ws/httpserver/file/muduo_qps.png)
+
+### Analysis
+
+* 测试结果表明，相比muduo，我的服务器还是略逊的！
+* 在搭建这个服务器的过程中，我的基本框架还有代码的风格(甚至一些直接的代码都是来自Muduo那本书)！但是呢，在慢慢搭建的过程中，我修改了Epoll的工作模式(LT->ET)，改进了缓冲区Buffer为环形缓冲区，还有线程间的异步任务调配我也为了避免锁的开销，改成了无锁结构，相比在这些做工作之前的服务器，我这个版本是有很大的性能提升的，这也是Muduo所没有的。
+* 之所以结果比Muduo弱，我觉得更多的是一些细节上的问题，比如临时资源的创建等等！(总之还是先认真看一下Muduo源码，优化自己的服务器的细节吧！)
 
 ## How to improve
 

@@ -77,7 +77,6 @@ void TcpConnection::sendInLoop(const std::string &message)
     // 如果输出队列为空，那么可以直接写进输出buffer
     if (!channel_->isWriting() && outputBuffer_.readableBytes() == 0)
     {
-
 #ifdef USE_EPOLL_LT
         nwrote = ::write(channel_->fd(), message.data(), message.size());
 #else
@@ -159,7 +158,7 @@ void TcpConnection::setTcpNoDelay(bool on)
 void TcpConnection::connectEstablished()
 {
     loop_->assertInLoopThread();
-    // setTcpNoDelay(true);
+    setTcpNoDelay(true);
     assert(state_ == kConnecting);
     setState(kConnected);
 #ifdef USE_EPOLL_LT

@@ -11,7 +11,7 @@
                 // "-D USE_STD_COUT",
                 // "-D USE_SPINLOCK",
                 "-D NDEBUG",
-                // "-D USE_LOCKFREEQUEUE",
+                "-D USE_LOCKFREEQUEUE",
                 "-D USE_EPOLL_LT",
                 "-D USE_RINGBUFFER",
                 "${file}",

@@ -159,6 +159,7 @@ void TcpConnection::setTcpNoDelay(bool on)
 void TcpConnection::connectEstablished()
 {
     loop_->assertInLoopThread();
+    // setTcpNoDelay(true);
     assert(state_ == kConnecting);
     setState(kConnected);
 #ifdef USE_EPOLL_LT

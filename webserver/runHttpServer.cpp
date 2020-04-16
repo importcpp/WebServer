@@ -13,13 +13,23 @@ extern char favicon[555];
 
 void onRequest(const HttpRequest &req, HttpResponse *resp)
 {
-
-    if (req.path() == "/hello")
+    if (req.path() == "/good")
     {
         resp->setStatusCode(HttpResponse::k200Ok);
         resp->setStatusMessage("OK");
         resp->setContentType("text/plain");
-        resp->addHeader("Server", "Muduo");
+        resp->addHeader("Server", "Webserver");
+        // 增大数据量，体现ringbuffer性能
+        string AAA(5000, '!');
+        AAA += "\n";
+        resp->setBody(AAA);
+    }
+    else if (req.path() == "/hello")
+    {
+        resp->setStatusCode(HttpResponse::k200Ok);
+        resp->setStatusMessage("OK");
+        resp->setContentType("text/plain");
+        resp->addHeader("Server", "Webserver");
         resp->setBody("hello, world!\n");
     }
     else if (req.path() == "/")
@@ -27,7 +37,7 @@ void onRequest(const HttpRequest &req, HttpResponse *resp)
         resp->setStatusCode(HttpResponse::k200Ok);
         resp->setStatusMessage("OK");
         resp->setContentType("text/html");
-        resp->addHeader("Server", "Muduo");
+        resp->addHeader("Server", "Webserver");
         string now = Timestamp::now().toFormattedString();
         resp->setBody("<html><head><title>This is title</title></head>"
                       "<body><h1>Hello</h1>Now is " +

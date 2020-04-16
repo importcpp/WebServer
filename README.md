@@ -56,21 +56,26 @@
 
 ### Simple Comparison
 
-压力测试的使用Webench，来自[linya](https://github.com/linyacool/WebServer)，谢谢！！！这里先做一个简要的对比，后期慢慢的详细对比，写一个更完整的文案
+压力测试使用了Webench，来自[linya](https://github.com/linyacool/WebServer)，谢谢！！！压力测试的方法也来自[linya](https://github.com/linyacool/WebServer/blob/master/测试及改进.md)，再次谢谢！！！
 
-|      | [Muduo](https://github.com/chenshuo/muduo) | Mine  |
-| :--: | :----------------------------------------: | :---: |
-| QPS  |                   115111                   | 94230 |
+这里先做一个简要的对比，后期慢慢的详细对比，写一个更完整的文案
 
-这里只对长连接进行测试，线程数都为4，下图是测试结果
+|                                            | QPS(响应消息体为短字符串) | QPS(响应消息体为长字符串) |
+| :----------------------------------------: | :-----------------------: | :-----------------------: |
+| [Muduo](https://github.com/chenshuo/muduo) |          115111           |            ---            |
+|                    Mine                    |           94230           |            ---            |
 
-* My Webserver测试结果
+这里只对长连接进行测试，线程模型是1个主线程+３个IO线程，为了对比线性Buffer和RingBuffer，使用了不同长度的响应消息体(长字符串对应5000个字符，短消息体对应12个字符)。下图是响应消息体为短字符串的测试结果(长字符还未对比)
+
+* My Webserver 响应消息体为短字符串时测试结果
 
 ![mine_qps](https://github.com/importcpp/WebServer/raw/master/file/mine_qps.png)
 
-* Muduo测试结果
+* Muduo 响应消息体为短字符串时测试结果
 
 ![muduo_qps](https://github.com/importcpp/WebServer/raw/master/file/muduo_qps.png)
+
+
 
 ### Analysis
 

@@ -20,7 +20,7 @@ void onRequest(const HttpRequest &req, HttpResponse *resp)
         resp->setContentType("text/plain");
         resp->addHeader("Server", "Webserver");
         // 增大数据量，体现ringbuffer性能
-        string AAA(5000, '!');
+        string AAA(1200, '!');
         AAA += "\n";
         resp->setBody(AAA);
     }

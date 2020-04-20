@@ -74,7 +74,8 @@ void TcpConnection::sendInLoop(const std::string &message)
 {
     loop_->assertInLoopThread();
     ssize_t nwrote = 0;
-    // 如果输出队列为空，那么可以直接写进输出buffer
+    size_t remaining = message.size();
+    // 先考虑outputbuffer里面是否含有缓冲，没有的话，那么可以直接写进输出buffer
     if (!channel_->isWriting() && outputBuffer_.readableBytes() == 0)
     {
 #ifdef USE_EPOLL_LT
@@ -82,20 +83,12 @@ void TcpConnection::sendInLoop(const std::string &message)
 #else
         nwrote = writeET(channel_->fd(), message.data(), message.size());
 #endif
-
         if (nwrote >= 0)
         {
-            if (implicit_cast<size_t>(nwrote) < message.size())
+            remaining -= nwrote;
+            if (remaining == 0 && writeCompleteCallback_)
             {
-#ifdef USE_STD_COUT
-                std::cout << "LOG_TRACE:   "
-                          << "I am going to write more data" << std::endl;
-#endif
-            }
-            else if (writeCompleteCallback_)
-            {
-                loop_->queueInLoop(
-                    std::bind(writeCompleteCallback_, shared_from_this()));
+                loop_->queueInLoop(std::bind(writeCompleteCallback_, shared_from_this()));
             }
         }
         else
@@ -104,18 +97,16 @@ void TcpConnection::sendInLoop(const std::string &message)
             if (errno != EWOULDBLOCK)
             {
 #ifdef USE_STD_COUT
-
-                std::cout << "LOG_SYSERR:   "
+                std::cout << "LOG_SYSERR:  "
                           << "TcpConnection::sendInLoop" << std::endl;
 #endif
             }
         }
     }
-
     assert(nwrote >= 0);
-    if (implicit_cast<size_t>(nwrote) < message.size())
+    if (remaining > 0)
     {
-        outputBuffer_.append(message.data() + nwrote, message.size() - nwrote);
+        outputBuffer_.append(message.data() + nwrote, remaining);
         // 如果没有关注writable事件，则开始关注
         if (!channel_->isWriting())
         {
@@ -217,7 +208,7 @@ void TcpConnection::handleWrite()
     {
         int savedErrno = 0;
 #ifdef USE_EPOLL_LT
-         ssize_t n = outputBuffer_.writeFd(channel_->fd(), &savedErrno);
+        ssize_t n = outputBuffer_.writeFd(channel_->fd(), &savedErrno);
 #else
         // ET模式读写，直到发生EAGAIN，才返回
         ssize_t n = outputBuffer_.writeFdET(channel_->fd(), &savedErrno);
@@ -231,21 +222,12 @@ void TcpConnection::handleWrite()
                 channel_->disableWriting();
                 if (writeCompleteCallback_)
                 {
-                    loop_->queueInLoop(
-                        std::bind(writeCompleteCallback_, shared_from_this()));
+                    loop_->queueInLoop(std::bind(writeCompleteCallback_, shared_from_this()));
                 }
-
                 if (state_ = kDisconnecting)
                 {
                     shutdownInLoop();
                 }
-            }
-            else
-            {
-#ifdef USE_STD_COUT
-                std::cout << "LOG_TRACE:   "
-                          << "I am going to write more data" << std::endl;
-#endif
             }
         }
         else

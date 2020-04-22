@@ -76,7 +76,9 @@ void TcpServer::newConnection(int sockfd, const InetAddress &peerAddr)
     if (backup_conn_.empty() == false)
     {
         TcpConnectionPtr conn(backup_conn_[0]);
+        spinlock.lock();
         backup_conn_.erase(backup_conn_.begin());
+        spinlock.unlock();
         conn->setNewTcpConnection(ioLoop, connName, sockfd, localAddr, peerAddr);
         connections_[connName] = conn;
         conn->setConnectionCallback(connectionCallback_);
@@ -89,6 +91,7 @@ void TcpServer::newConnection(int sockfd, const InetAddress &peerAddr)
         return;
     }
 #endif
+
     TcpConnectionPtr conn(new TcpConnection(ioLoop, connName, sockfd, localAddr, peerAddr));
     connections_[connName] = conn;
     conn->setConnectionCallback(connectionCallback_);

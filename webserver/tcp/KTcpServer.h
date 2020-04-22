@@ -2,6 +2,7 @@
 
 #include "../utils/Knoncopyable.h"
 #include "../utils/KCallbacks.h"
+#include "../lock/KSpinLock.h"
 #include "KTcpConnection.h"
 #include "KInetAddress.h"
 #include <map>
@@ -54,13 +55,15 @@ public:
     // recycle 函数
     void recycleCallback(TcpConnectionPtr conn)
     {
-        if(oddEven == false)
+        if (oddEven == false)
         {
             oddEven = true;
             return;
         }
         oddEven = false;
+        spinlock.lock();
         backup_conn_.push_back(conn);
+        spinlock.unlock();
     }
 #endif
 
@@ -87,7 +90,10 @@ private:
     bool oddEven = false;
     // tcp连接字典
     ConnectionMap connections_;
+#ifdef USE_RECYCLE
+    SpinLock spinlock;
     std::vector<TcpConnectionPtr> backup_conn_;
+#endif
     std::unique_ptr<EventLoopThreadPool> threadPool_;
 };
 

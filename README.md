@@ -21,7 +21,7 @@
 * **实现[LockFreeQueue](https://github.com/importcpp/WebServer/blob/master/webserver/lock/KLockFreeQueue.h)用于任务的异步添加与移除**，代替了常规的互斥锁管理临界区的方式 [这里的Lock free queue并没有解决ABA问题，但是针对这里单生产者单消费者模型，不会发生ABA问题]
 * 实现[环形缓冲区](https://github.com/importcpp/WebServer/blob/master/webserver/tcp/KRingBuffer.h)作为Tcp读取数据和写入数据的缓冲类，使得数据被读取之后不需要移动其余元素的位置来在尾部腾出空间，针对环形缓冲区读或者写空间可能会出现不连续的情况，在Read和Write的处理上，使用了readv和writev系统调用读取不连续的内存(只需要一次系统调用)，解决了系统调用和拷贝带来的开销
 * 采用智能指针管理对象的资源
-* dev分支加入了Tcp Connection的**回收机制**，用于回收Tcp Connection对象中的资源，避免多次创建的开销
+* 加入了TcpConnection对象的**回收机制**，用于回收Tcp Connection对象中的资源，避免多次创建的开销
 * ......
 
 ## Develop and Fix List

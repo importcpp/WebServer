@@ -32,6 +32,9 @@ public:
 
     ~TcpConnection();
 
+    void setNewTcpConnection(EventLoop *loop, const std::string &name, int sockfd,
+                             const InetAddress &localAddr, const InetAddress &peeAddr);
+
     EventLoop *getLoop() const { return loop_; }
     const std::string &name() const { return name_; }
     const InetAddress &localAddress() { return localAddr_; }
@@ -80,6 +83,12 @@ public:
         closeCallback_ = cb;
     }
 
+    // 
+    void setRecycleCallback(const RecycleCallback & cb)
+    {
+        recycleCallback_ = cb;
+    }
+
     // 只在TcpServer接受新连接的时候调用
     void connectEstablished();
     // 只在TcpServer移除连接的时候调用
@@ -115,6 +124,7 @@ private:
     MessageCallback messageCallback_;
     WriteCompleteCallback writeCompleteCallback_;
     CloseCallback closeCallback_;
+    RecycleCallback recycleCallback_;
 
     Buffer inputBuffer_;
     Buffer outputBuffer_;

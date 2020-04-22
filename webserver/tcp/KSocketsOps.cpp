@@ -87,13 +87,9 @@ void sockets::listenOrDie(int sockfd)
 int sockets::accept(int sockfd, struct sockaddr_in *addr)
 {
     socklen_t addrlen = sizeof *addr;
-#if VALGRIND
-    int connfd = ::accept(sockfd, sockaddr_cast(addr), &addrlen);
-    setNonBlockAndCloseOnExec(connfd);
-#else
+
     int connfd = ::accept4(sockfd, sockaddr_cast(addr),
                            &addrlen, SOCK_NONBLOCK | SOCK_CLOEXEC);
-#endif
     if (connfd < 0)
     {
         int savedErrno = errno;
@@ -146,6 +142,9 @@ void sockets::close(int sockfd)
                   << "sockets::close" << std::endl;
 #endif
     }
+#ifdef USE_STD_COUT
+    std::cout << "sockets::close " << sockfd << std::endl;
+#endif
 }
 
 void sockets::shutdownWrite(int sockfd)

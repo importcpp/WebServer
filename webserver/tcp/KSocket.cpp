@@ -12,29 +12,34 @@ using namespace kback;
 
 Socket::~Socket()
 {
-    sockets::close(sockfd_);
+  sockets::close(sockfd_);
 }
 
-void Socket::bindAddress(const InetAddress& addr)
+void Socket::forceClose()
 {
-    sockets::bindOrDie(sockfd_, addr.getSockAddrInet());
+  sockets::close(sockfd_);
+}
+
+void Socket::bindAddress(const InetAddress &addr)
+{
+  sockets::bindOrDie(sockfd_, addr.getSockAddrInet());
 }
 
 void Socket::listen()
 {
-    sockets::listenOrDie(sockfd_);
+  sockets::listenOrDie(sockfd_);
 }
 
-int Socket::accept(InetAddress* peeraddr)
+int Socket::accept(InetAddress *peeraddr)
 {
-    struct sockaddr_in addr;
-    memZero(&addr, sizeof addr);
-    int connfd = sockets::accept(sockfd_, &addr);
-    if(connfd >= 0)
-    {
-        peeraddr->setSockAddrInet(addr);
-    }
-    return connfd;
+  struct sockaddr_in addr;
+  memZero(&addr, sizeof addr);
+  int connfd = sockets::accept(sockfd_, &addr);
+  if (connfd >= 0)
+  {
+    peeraddr->setSockAddrInet(addr);
+  }
+  return connfd;
 }
 
 // 设置调用close(socket)后,仍可继续重用该socket。

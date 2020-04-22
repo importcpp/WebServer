@@ -7,6 +7,7 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <vector>
 
 namespace kback
 {
@@ -49,6 +50,20 @@ public:
         writeCompleteCallback_ = cb;
     }
 
+#ifdef USE_RECYCLE
+    // recycle 函数
+    void recycleCallback(TcpConnectionPtr conn)
+    {
+        if(oddEven == false)
+        {
+            oddEven = true;
+            return;
+        }
+        oddEven = false;
+        backup_conn_.push_back(conn);
+    }
+#endif
+
 private:
     // 服务器对新连接的连接处理函数
     void newConnection(int sockfd, const InetAddress &peerAddr);
@@ -69,8 +84,10 @@ private:
     WriteCompleteCallback writeCompleteCallback_;
     bool started_;
     int nextConnId_;
+    bool oddEven = false;
     // tcp连接字典
     ConnectionMap connections_;
+    std::vector<TcpConnectionPtr> backup_conn_;
     std::unique_ptr<EventLoopThreadPool> threadPool_;
 };
 

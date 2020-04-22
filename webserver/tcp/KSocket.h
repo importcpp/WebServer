@@ -26,6 +26,9 @@ public:
         return sockfd_;
     }
 
+    void forceClose();
+
+
     // 服务端建立连接的三个流程
     void bindAddress(const InetAddress &localaddr);
     void listen();

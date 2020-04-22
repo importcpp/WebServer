@@ -69,9 +69,26 @@ void TcpServer::newConnection(int sockfd, const InetAddress &peerAddr)
               << "] from " << peerAddr.toHostPort() << std::endl;
 #endif
     // 当新的连接达到时，先注册一个TcpConnection对象，然后用io线程进行管理
-
     InetAddress localAddr(sockets::getLocalAddr(sockfd));
     EventLoop *ioLoop = threadPool_->getNextLoop();
+
+#ifdef USE_RECYCLE
+    if (backup_conn_.empty() == false)
+    {
+        TcpConnectionPtr conn(backup_conn_[0]);
+        conn->setNewTcpConnection(ioLoop, connName, sockfd, localAddr, peerAddr);
+        connections_[connName] = conn;
+        backup_conn_.erase(backup_conn_.begin());
+        conn->setConnectionCallback(connectionCallback_);
+        conn->setMessageCallback(messageCallback_);
+        conn->setWriteCompleteCallback(writeCompleteCallback_);
+        conn->setCloseCallback(
+            std::bind(&TcpServer::removeConnection, this, _1));
+        conn->setRecycleCallback(std::bind(&TcpServer::recycleCallback, this, _1));
+        ioLoop->runInLoop(std::bind(&TcpConnection::connectEstablished, conn));
+        return;
+    }
+#endif
     TcpConnectionPtr conn(new TcpConnection(ioLoop, connName, sockfd, localAddr, peerAddr));
     connections_[connName] = conn;
     conn->setConnectionCallback(connectionCallback_);
@@ -79,6 +96,9 @@ void TcpServer::newConnection(int sockfd, const InetAddress &peerAddr)
     conn->setWriteCompleteCallback(writeCompleteCallback_);
     conn->setCloseCallback(
         std::bind(&TcpServer::removeConnection, this, _1));
+#ifdef USE_RECYCLE
+    conn->setRecycleCallback(std::bind(&TcpServer::recycleCallback, this, _1));
+#endif
     ioLoop->runInLoop(std::bind(&TcpConnection::connectEstablished, conn));
 }
 

@@ -51,6 +51,36 @@ TcpConnection::~TcpConnection()
 #endif
 }
 
+
+void TcpConnection::setNewTcpConnection(EventLoop *loop, const std::string &nameArg, int sockfd,
+                                        const InetAddress &localAddr, const InetAddress &peeAddr)
+{
+    loop_ = CheckNotNull<EventLoop>(loop);
+    name_ = nameArg;
+    state_ = kConnecting;
+    socket_.reset(new Socket(sockfd));
+    channel_.reset(new Channel(loop_, sockfd));
+    localAddr_ = localAddr;
+    peerAddr_ = peeAddr;
+    inputBuffer_.retrieveAll();
+    outputBuffer_.retrieveAll();
+
+#ifdef USE_STD_COUT
+    std::cout << "LOG_DEBUG:   "
+              << "TcpConnection::ctor[" << name_ << "] at " << this
+              << " fd=" << sockfd << std::endl;
+#endif
+
+    channel_->setReadCallback(
+        std::bind(&TcpConnection::handleRead, this, _1));
+    channel_->setWriteCallback(
+        std::bind(&TcpConnection::handleWrite, this));
+    channel_->setCloseCallback(
+        std::bind(&TcpConnection::handleClose, this));
+    channel_->setErrorCallback(
+        std::bind(&TcpConnection::handleError, this));
+}
+
 void TcpConnection::send(const std::string &message)
 {
     if (state_ == kConnected)
@@ -171,6 +201,14 @@ void TcpConnection::connectDestroyed()
 
     // 移除poller对channel_指针的管理
     loop_->removeChannel(get_pointer(channel_));
+#ifdef USE_RECYCLE
+    // 文件描述符需要析构
+    socket_.reset();
+    channel_.reset();
+    context_.clear();
+    recycleCallback_(shared_from_this());
+#endif
+
 }
 
 void TcpConnection::handleRead(Timestamp receiveTime)

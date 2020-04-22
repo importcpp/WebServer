@@ -24,7 +24,7 @@ EventManager::EventManager(EventLoop *loop)
     if (epollfd_ < 0)
     {
 #ifdef USE_STD_COUT
-        std::cout << "LOG_SYSFATAL"
+        std::cout << "LOG_SYSFATAL:   "
                   << "EventManager::EventManager" << std::endl;
 #endif
     }
@@ -38,7 +38,7 @@ EventManager::~EventManager()
 Timestamp EventManager::poll(int timeoutMs, ChannelList *activeChannels)
 {
 #ifdef USE_STD_COUT
-    std::cout << "LOG_TRACE"
+    std::cout << "LOG_TRACE:   "
               << "fd total count " << channels_.size() << std::endl;
 #endif
     int numEvents = ::epoll_wait(epollfd_,
@@ -50,7 +50,7 @@ Timestamp EventManager::poll(int timeoutMs, ChannelList *activeChannels)
     if (numEvents > 0)
     {
 #ifdef USE_STD_COUT
-        std::cout << "LOG_TRACE" << numEvents << " events happended" << std::endl;
+        std::cout << "LOG_TRACE:   " << numEvents << " events happended" << std::endl;
 #endif
         fillActiveChannels(numEvents, activeChannels);
         if (implicit_cast<size_t>(numEvents) == events_.size())
@@ -61,7 +61,7 @@ Timestamp EventManager::poll(int timeoutMs, ChannelList *activeChannels)
     else if (numEvents == 0)
     {
 #ifdef USE_STD_COUT
-        std::cout << "LOG_TRACE"
+        std::cout << "LOG_TRACE:   "
                   << " nothing happended" << std::endl;
 #endif
     }
@@ -71,7 +71,7 @@ Timestamp EventManager::poll(int timeoutMs, ChannelList *activeChannels)
         {
             errno = savedErrno;
 #ifdef USE_STD_COUT
-            std::cout << "LOG_SYSERR"
+            std::cout << "LOG_SYSERR:   "
                       << "EventManager::poll()" << std::endl;
 #endif
         }
@@ -96,7 +96,7 @@ void EventManager::updateChannel(Channel *channel)
     assertInLoopThread();
     const int index = channel->index();
 #ifdef USE_STD_COUT
-    std::cout << "LOG_TRACE"
+    std::cout << "LOG_TRACE:   "
               << "fd = " << channel->fd()
               << " events = " << channel->events() << " index = " << index << std::endl;
 #endif
@@ -170,9 +170,9 @@ void EventManager::update(int operation, Channel *channel)
     event.data.ptr = channel;
     int fd = channel->fd();
 #ifdef USE_STD_COUT
-    std::cout << "LOG_TRACE"
+    std::cout << "LOG_TRACE:   "
               << "epoll_ctl op = " << operationToString(operation)
-              << " fd = " << fd << " event = { " << channel->eventsToString() << " }";
+              << " fd = " << fd << " event = { " << channel->eventsToString() << " }" << std::endl;
 #endif
     if (::epoll_ctl(epollfd_, operation, fd, &event) < 0)
     {

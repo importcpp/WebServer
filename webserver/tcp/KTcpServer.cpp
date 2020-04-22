@@ -76,9 +76,9 @@ void TcpServer::newConnection(int sockfd, const InetAddress &peerAddr)
     if (backup_conn_.empty() == false)
     {
         TcpConnectionPtr conn(backup_conn_[0]);
+        backup_conn_.erase(backup_conn_.begin());
         conn->setNewTcpConnection(ioLoop, connName, sockfd, localAddr, peerAddr);
         connections_[connName] = conn;
-        backup_conn_.erase(backup_conn_.begin());
         conn->setConnectionCallback(connectionCallback_);
         conn->setMessageCallback(messageCallback_);
         conn->setWriteCompleteCallback(writeCompleteCallback_);

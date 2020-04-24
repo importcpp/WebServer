@@ -15,7 +15,7 @@ class Buffer : public kback::copyable
 {
 public:
     static const size_t kForPrepend = 1;
-    static const size_t kInitialSize = 1024;
+    static const size_t kInitialSize = 512;
 
     Buffer() : capacity_(kForPrepend + kInitialSize),
                readerIndex_(kForPrepend),

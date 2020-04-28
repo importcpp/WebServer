@@ -50,7 +50,7 @@
 
 本服务器采用了事件循环 + 非阻塞IO的主题架构，通过事件驱动和事件回调来实现业务逻辑。事件循环用于做事件通知，如果有新的连接被Accept，则把新连接的socket对象的管理工作转交给其他线程。模型的整体架构如下图所示，模型的架构发展过程可见[History](https://github.com/importcpp/WebServer/blob/master/History.md).
 
-<img src="https://gitee.com/realgeorge/FIleForGithub/blob/master/file/serverarch2.png" alt="v3" style="zoom: 80%;" />	
+![模型架构](https://gitee.com/realgeorge/FIleForGithub/raw/master/file/serverarch2.png)
 
 ## Server Performance
 
@@ -71,13 +71,11 @@
 
 * My Webserver 响应消息体为短字符串时测试结果
 
-![mine_qps](https://github.com/importcpp/WebServer/raw/master/file/mine_qps.png)
+![自己服务器的QPS数据](https://gitee.com/realgeorge/FIleForGithub/raw/master/file/mine_qps.png)
 
 * Muduo 响应消息体为短字符串时测试结果
 
-![muduo_qps](https://github.com/importcpp/WebServer/raw/master/file/muduo_qps.png)
-
-
+![Muduo的QPS数据](https://gitee.com/realgeorge/FIleForGithub/raw/master/file/muduo_qps.png)
 
 ### Analysis
 

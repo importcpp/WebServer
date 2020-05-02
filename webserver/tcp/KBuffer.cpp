@@ -42,6 +42,11 @@ ssize_t Buffer::readFdET(int fd, int *savedErrno)
             }
             return -1;
         }
+        else if (n == 0)
+        {
+            // 没有读取到数据，认为对端已经关闭
+            return 0;
+        }
         else if (implicit_cast<size_t>(n) <= writable)
         {
             // 还没有写满缓冲区
@@ -101,7 +106,7 @@ ssize_t Buffer::writeFd(int fd, int *savedErrno)
     // 从可读位置开始读取
     ssize_t n = ::write(fd, peek(), readableBytes());
 
-    if(n > 0)
+    if (n > 0)
     {
         retrieve(n);
     }
@@ -114,7 +119,7 @@ ssize_t Buffer::writeFd(int fd, int *savedErrno)
 ssize_t Buffer::writeFdET(int fd, int *savedErrno)
 {
     ssize_t writesum = 0;
-    
+
     for (;;)
     {
         ssize_t n = ::write(fd, peek(), readableBytes());

@@ -25,18 +25,18 @@ SA *sockaddr_cast(struct sockaddr_in *addr)
     return static_cast<SA *>(implicit_cast<void *>(addr));
 }
 
-void setNonBlockAndCloseOnExec(int sockfd)
-{
-    // non-block
-    int flags = ::fcntl(sockfd, F_GETFL, 0);
-    flags |= O_NONBLOCK;
-    int ret = ::fcntl(sockfd, F_SETFL, flags);
+// void setNonBlockAndCloseOnExec(int sockfd)
+// {
+//     // non-block
+//     int flags = ::fcntl(sockfd, F_GETFL, 0);
+//     flags |= O_NONBLOCK;
+//     ::fcntl(sockfd, F_SETFL, flags);
 
-    // close-on-exec
-    flags = ::fcntl(sockfd, F_GETFD, 0);
-    flags |= FD_CLOEXEC;
-    ret = ::fcntl(sockfd, F_SETFD, flags);
-}
+//     // close-on-exec
+//     flags = ::fcntl(sockfd, F_GETFD, 0);
+//     flags |= FD_CLOEXEC;
+//     ::fcntl(sockfd, F_SETFD, flags);
+// }
 
 } // namespace
 

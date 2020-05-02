@@ -15,10 +15,10 @@ const int kPollTimeMs = 1000;
 
 EventLoop::EventLoop()
     : looping_(false),
-      quit_(false),
-      callingPendingFunctors_(false),
       threadId_(std::this_thread::get_id()),
       eventmanager_(new EventManager(this)),
+      quit_(false),
+      callingPendingFunctors_(false),
       asyncwaker(new AsyncWaker(this))
 {
 #ifdef USE_STD_COUT
@@ -106,7 +106,6 @@ void EventLoop::abortNotInLoopThread()
 #endif
     std::abort();
 }
-
 
 // 执行装载的的回调函数，下面的处理方法很巧妙
 void EventLoop::doPendingFunctors()

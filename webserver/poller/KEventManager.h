@@ -43,13 +43,14 @@ private:
 
     typedef std::vector<struct epoll_event> EventList;
 
-    int epollfd_;
-    EventList events_;
-
 private:
     typedef std::map<int, Channel *> ChannelMap;
     ChannelMap channels_; // 从fd到channel*的映射
     EventLoop *ownerLoop_;
+
+private:
+    int epollfd_;
+    EventList events_;
 };
 
 } // namespace kback

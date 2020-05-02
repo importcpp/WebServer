@@ -17,9 +17,9 @@ public:
     static const size_t kForPrepend = 1;
     static const size_t kInitialSize = 1024;
 
-    Buffer() : capacity_(kForPrepend + kInitialSize),
-               readerIndex_(kForPrepend),
+    Buffer() : readerIndex_(kForPrepend),
                writerIndex_(kForPrepend),
+               capacity_(kForPrepend + kInitialSize),
                buffer_(new char[capacity_])
     {
         assert(readableBytes() == 0);

@@ -263,7 +263,7 @@ void TcpConnection::handleWrite()
                     loop_->queueInLoop(std::bind(writeCompleteCallback_, shared_from_this()));
                 }
                 // 通过状态机转换，如果有关闭请求，则处理关闭
-                if (state_ = kDisconnecting)
+                if (state_ == kDisconnecting)
                 {
                     shutdownInLoop();
                 }

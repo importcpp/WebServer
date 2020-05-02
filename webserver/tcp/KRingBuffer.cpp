@@ -102,6 +102,11 @@ ssize_t Buffer::readFdET(int fd, int *savedErrno)
             }
             return -1;
         }
+        else if(n == 0)
+        {
+            // 没有读取到数据，认为对端已经关闭
+            return 0;
+        }
         else if (implicit_cast<size_t>(n) <= writable)
         {
             // 还没有写满缓冲区

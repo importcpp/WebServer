@@ -5,8 +5,8 @@
 using namespace kback;
 
 AsyncWaker::AsyncWaker(EventLoop *loop)
-    : loop_(loop),
-      wakerfd_(::eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC)),
+    : wakerfd_(::eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC)),
+      loop_(loop),
       wakerchannel_(new Channel(loop, wakerfd_))
 {
     if (wakerfd_ < 0)

@@ -50,7 +50,6 @@ public:
         addHeader("Content-Type", contentType);
     }
 
-    // FIXME: replace string with StringPiece
     void addHeader(const string &key, const string &value)
     {
         headers_[key] = value;
@@ -66,7 +65,7 @@ public:
 private:
     std::map<string, string> headers_;
     HttpStatusCode statusCode_;
-    // FIXME: add http version
+
     string statusMessage_;
     bool closeConnection_;
     string body_;

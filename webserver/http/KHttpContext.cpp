@@ -11,6 +11,7 @@ using namespace kback;
 
 const char HttpContext::kCRLF[] = "\r\n"; // 回车换行
 
+// 对请求行的处理
 bool HttpContext::processRequestLine(const char *begin, const char *end)
 {
     bool succeed = false;
@@ -60,7 +61,7 @@ bool HttpContext::parseRequest(Buffer *buf, Timestamp receiveTime)
     string str_buf = buf->retrieveAsString();
     bool ok = true;
     bool hasMore = true;
-
+    // 利用状态机转移，分三部分对请求报文进行解析
     while (hasMore)
     {
         int start = 0;
@@ -99,8 +100,7 @@ bool HttpContext::parseRequest(Buffer *buf, Timestamp receiveTime)
                 }
                 else
                 {
-                    // empty line, end of header
-                    // FIXME:
+                    // 空行，头部解析完毕
                     state_ = kGotAll;
                     hasMore = false;
                 }
@@ -114,7 +114,6 @@ bool HttpContext::parseRequest(Buffer *buf, Timestamp receiveTime)
         }
         else if (state_ == kExpectBody)
         {
-            // FIXME:
             // 可以用于提取报文的主体部分
         }
     }
@@ -122,15 +121,15 @@ bool HttpContext::parseRequest(Buffer *buf, Timestamp receiveTime)
 }
 
 #else
-// return false if any error
 // 解析http请求
 bool HttpContext::parseRequest(Buffer *buf, Timestamp receiveTime)
 {
-    // string str_buf = buf->retrieveAsString();
     bool ok = true;
     bool hasMore = true;
+    // 利用状态机转移，分三部分对请求报文进行解析
     while (hasMore)
     {
+        // 请求行解析
         if (state_ == kExpectRequestLine)
         {
             const char *crlf = buf->findCRLF();
@@ -153,6 +152,7 @@ bool HttpContext::parseRequest(Buffer *buf, Timestamp receiveTime)
                 hasMore = false;
             }
         }
+        // 请求头解析
         else if (state_ == kExpectHeaders)
         {
             const char *crlf = buf->findCRLF();
@@ -165,8 +165,7 @@ bool HttpContext::parseRequest(Buffer *buf, Timestamp receiveTime)
                 }
                 else
                 {
-                    // empty line, end of header
-                    // FIXME:
+                    // 空行，头部解析完毕
                     state_ = kGotAll;
                     hasMore = false;
                 }
@@ -179,7 +178,6 @@ bool HttpContext::parseRequest(Buffer *buf, Timestamp receiveTime)
         }
         else if (state_ == kExpectBody)
         {
-            // FIXME:
             // 可以用于提取报文的主体部分
         }
     }

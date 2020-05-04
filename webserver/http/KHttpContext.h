@@ -24,9 +24,6 @@ public:
     {
     }
 
-    // default copy-ctor, dtor and assignment are fine
-
-    // return false if any error
     bool parseRequest(Buffer *buf, Timestamp receiveTime);
 
     bool gotAll() const

@@ -69,13 +69,17 @@
 
 这里只对长连接进行测试，线程模型是1个主线程+３个IO线程，为了对比线性Buffer和RingBuffer，使用了不同长度的响应消息体(长字符串对应5000个字符，短消息体对应12个字符)。下图是响应消息体为短字符串的测试结果(长字符还未对比)
 
-* My Webserver 响应消息体为短字符串时测试结果
+* My Webserver 响应消息体为短字符串时测试结果和CPU负载
 
 ![自己服务器的QPS数据](https://gitee.com/realgeorge/FIleForGithub/raw/master/file/mine_qps.png)
 
-* Muduo 响应消息体为短字符串时测试结果
+![img](https://gitee.com/realgeorge/FIleForGithub/raw/master/file/cpu_myserver.png)
+
+* Muduo 响应消息体为短字符串时测试结果和CPU负载
 
 ![Muduo的QPS数据](https://gitee.com/realgeorge/FIleForGithub/raw/master/file/muduo_qps.png)
+
+![img](https://gitee.com/realgeorge/FIleForGithub/raw/master/file/cpu_muduo.png)
 
 ### Analysis
 

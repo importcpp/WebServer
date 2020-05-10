@@ -44,8 +44,6 @@
 * (Before ...) 多线程日志
 * (Before ...) 实现定时器功能 (先小根堆试试，毕竟直接调库，然后写红黑树，可以参照Nginx，最后实现下淘宝Tengine中的四叉最小堆)
 
-
-
 ## Model Architecture
 
 本服务器采用了事件循环 + 非阻塞IO的主题架构，通过事件驱动和事件回调来实现业务逻辑。事件循环用于做事件通知，如果有新的连接被Accept，则把新连接的socket对象的管理工作转交给其他线程。模型的整体架构如下图所示，模型的架构发展过程可见[History](https://github.com/importcpp/WebServer/blob/master/History.md).
@@ -65,7 +63,7 @@
 |                                            | QPS(响应消息体为短字符串) | QPS(响应消息体为长字符串) |
 | :----------------------------------------: | :-----------------------: | :-----------------------: |
 | [Muduo](https://github.com/chenshuo/muduo) |          115111           |            ---            |
-|                    Mine                    |           94230           |            ---            |
+|                    Mine                    |          104644           |            ---            |
 
 这里只对长连接进行测试，线程模型是1个主线程+３个IO线程，为了对比线性Buffer和RingBuffer，使用了不同长度的响应消息体(长字符串对应5000个字符，短消息体对应12个字符)。下图是响应消息体为短字符串的测试结果(长字符还未对比)
 
@@ -74,6 +72,10 @@
 ![自己服务器的QPS数据](https://gitee.com/realgeorge/FIleForGithub/raw/master/file/mine_qps.png)
 
 ![img](https://gitee.com/realgeorge/FIleForGithub/raw/master/file/cpu_myserver.png)
+
+最近提炼了一下代码，MyWebserver的并发量有了很大提升，测试结果如下
+
+![自己服务器的QPS数据Improvement](https://gitee.com/realgeorge/FIleForGithub/raw/master/file/improvement.png)
 
 * Muduo 响应消息体为短字符串时测试结果和CPU负载
 
@@ -85,7 +87,7 @@
 
 * 测试结果表明，相比muduo，我的服务器还是略逊的！
 * 在搭建这个服务器的过程中，我的基本框架还有代码的风格(甚至一些直接的代码都是来自Muduo那本书)！但是呢，在慢慢搭建的过程中，我修改了Epoll的工作模式(LT->ET)，改进了缓冲区Buffer为环形缓冲区，还有线程间的异步任务调配我也为了避免锁的开销，改成了无锁结构，相比在这些做工作之前的服务器，我这个版本是有很大的性能提升的，这也是Muduo所没有的。
-* 之所以结果比Muduo弱，我觉得更多的是一些细节上的问题，比如临时资源的创建等等！(总之还是先认真看一下Muduo源码，优化自己的服务器的细节吧！)
+* 之所以结果比Muduo弱，我觉得更多的是一些细节上的问题，比如临时资源的创建等等！(总之还是先认真看一下Muduo源码，优化自己的服务器的细节吧！)   [代码优化正在进行中]
 
 ## How to improve
 

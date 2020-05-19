@@ -1,6 +1,7 @@
 #pragma once
 #include "../tcp/KTcpServer.h"
 #include "../utils/Knoncopyable.h"
+#include <sys/stat.h>
 
 namespace kback
 {

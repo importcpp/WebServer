@@ -22,7 +22,14 @@ void HttpResponse::appendToBuffer(Buffer *output) const
     }
     else
     {
-        snprintf(buf, sizeof buf, "Content-Length: %zd\r\n", body_.size());
+        if (hasSetBody_ == true)
+        {
+            snprintf(buf, sizeof buf, "Content-Length: %zd\r\n", body_.size());
+        }
+        else{
+            // 
+            snprintf(buf, sizeof buf, "Content-Length: %zd\r\n", fileSize_);
+        }
         output->append(buf);
         output->append("Connection: Keep-Alive\r\n");
     }
@@ -36,5 +43,8 @@ void HttpResponse::appendToBuffer(Buffer *output) const
     }
 
     output->append("\r\n");
-    output->append(body_);
+    if (hasSetBody_ == true)
+    {
+        output->append(body_);
+    }
 }

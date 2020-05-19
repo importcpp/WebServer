@@ -51,7 +51,6 @@ TcpConnection::~TcpConnection()
 #endif
 }
 
-
 void TcpConnection::setNewTcpConnection(EventLoop *loop, const std::string &nameArg, int sockfd,
                                         const InetAddress &localAddr, const InetAddress &peeAddr)
 {
@@ -91,6 +90,7 @@ void TcpConnection::send(const std::string &message)
         }
         else
         {
+            // 这个暂时没有用处，send只发生在IO线程
             loop_->runInLoop(std::bind(&TcpConnection::sendInLoop, this, message));
         }
     }
@@ -208,7 +208,6 @@ void TcpConnection::connectDestroyed()
     context_.clear();
     recycleCallback_(shared_from_this());
 #endif
-
 }
 
 void TcpConnection::handleRead(Timestamp receiveTime)
@@ -359,3 +358,16 @@ ssize_t writeET(int fd, const char *begin, size_t len)
     return writesum;
 }
 #endif
+
+void TcpConnection::hpSendFile(int srcFd, size_t count)
+{
+    if (state_ == kConnected)
+    {
+        if (loop_->isInLoopThread())
+        {
+            ssize_t n = sendfile(channel_->fd(), srcFd, NULL, count);
+            std::cout << n << std::endl;
+            assert(n == count);
+        }
+    }
+}

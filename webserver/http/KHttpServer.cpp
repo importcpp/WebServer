@@ -5,6 +5,13 @@
 #include "KHttpRequest.h"
 #include "KHttpResponse.h"
 #include "KIcons.h"
+#include <string.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <stdio.h>
+#include <stdlib.h>
+
 extern char favicon[555];
 
 using namespace kback;
@@ -12,7 +19,37 @@ using namespace kback;
 void defaultHttpCallback(const HttpRequest &req, HttpResponse *resp)
 {
     // 根据请求内容设置相应报文
-    if (req.path() == "/good")
+    if (req.path() == "/file")
+    {
+        // read file len
+        size_t filesize = -1;
+        struct stat statbuff;
+        if (stat("./index.html", &statbuff) < 0)
+        {
+            resp->setStatusCode(HttpResponse::k404NotFound);
+            resp->setStatusMessage("Not Found");
+            resp->setCloseConnection(true);
+        }
+        else
+        {
+            filesize = statbuff.st_size;
+            int srcFd = open("./index.html", O_RDONLY, 0);
+            if (srcFd < 0)
+            {
+                resp->setStatusCode(HttpResponse::k404NotFound);
+                resp->setStatusMessage("Not Found");
+                resp->setCloseConnection(true);
+            }
+            resp->setFileSize(filesize);
+            resp->setSrcFd(srcFd);
+            resp->setStatusCode(HttpResponse::k200Ok);
+            resp->setStatusMessage("OK");
+            resp->setContentType("text/html");
+            resp->addHeader("Server", "Webserver");
+            // 处理body留到之后的部分来处理
+        }
+    }
+    else if (req.path() == "/good")
     {
         resp->setStatusCode(HttpResponse::k200Ok);
         resp->setStatusMessage("OK");
@@ -113,11 +150,25 @@ void HttpServer::onRequest(const TcpConnectionPtr &conn, const HttpRequest &req)
                  (req.getVersion() == HttpRequest::kHttp10 && connection != "Keep-Alive");
     HttpResponse response(close);
     httpCallback_(req, &response);
-    Buffer buf;
-    response.appendToBuffer(&buf);
-    // conn->send(&buf);
-    string temp = buf.retrieveAsString();
-    conn->send(temp);
+
+    if (req.path() == "/file")
+    {
+        // read file len
+        Buffer buf;
+        response.appendToBuffer(&buf);
+        string temp = buf.retrieveAsString();
+        conn->send(temp);
+        conn->hpSendFile(response.getSrcFd(), response.getFileSize());
+    }
+    else
+    {
+        Buffer buf;
+        response.appendToBuffer(&buf);
+        // conn->send(&buf);
+        string temp = buf.retrieveAsString();
+        conn->send(temp);
+    }
+
     if (response.closeConnection())
     {
         conn->shutdown();

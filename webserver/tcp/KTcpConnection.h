@@ -11,6 +11,7 @@
 #include <memory>
 #include <string>
 #include <boost/any.hpp>
+#include <sys/sendfile.h>
 
 namespace kback
 {
@@ -83,8 +84,11 @@ public:
         closeCallback_ = cb;
     }
 
-    // 
-    void setRecycleCallback(const RecycleCallback & cb)
+    // zero copy
+    void hpSendFile(int srcFd, size_t count);
+
+    //
+    void setRecycleCallback(const RecycleCallback &cb)
     {
         recycleCallback_ = cb;
     }

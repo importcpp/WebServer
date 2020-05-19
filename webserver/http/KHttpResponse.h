@@ -21,7 +21,10 @@ public:
 
     explicit HttpResponse(bool close)
         : statusCode_(kUnknown),
-          closeConnection_(close)
+          closeConnection_(close),
+          hasSetBody_(false),
+          fileSize_(0),
+          srcFd_(0)
     {
     }
 
@@ -58,6 +61,27 @@ public:
     void setBody(const string &body)
     {
         body_ = body;
+        hasSetBody_ = true;
+    }
+
+    void setFileSize(size_t count)
+    {
+        fileSize_ = count;
+    }
+
+    void setSrcFd(size_t fd)
+    {
+        srcFd_ = fd;
+    }
+
+    size_t getFileSize()
+    {
+        return fileSize_;
+    }
+
+    size_t getSrcFd()
+    {
+        return srcFd_;
     }
 
     void appendToBuffer(Buffer *output) const;
@@ -68,7 +92,10 @@ private:
 
     string statusMessage_;
     bool closeConnection_;
+    bool hasSetBody_;
     string body_;
+    size_t fileSize_;
+    size_t srcFd_;
 };
 
 } // namespace kback

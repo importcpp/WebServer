@@ -9,7 +9,7 @@ using namespace kback;
 
 int main(int argc, char *argv[])
 {
-    int numThreads = 2;
+    int numThreads = 0;
     if (argc > 1)
     {
         numThreads = atoi(argv[1]);

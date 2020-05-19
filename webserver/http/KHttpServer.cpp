@@ -33,7 +33,7 @@ void defaultHttpCallback(const HttpRequest &req, HttpResponse *resp)
         else
         {
             filesize = statbuff.st_size;
-            int srcFd = open("./index.html", O_RDONLY, 0);
+            int srcFd = open("./index.html", O_RDONLY | O_NONBLOCK, 0);
             if (srcFd < 0)
             {
                 resp->setStatusCode(HttpResponse::k404NotFound);

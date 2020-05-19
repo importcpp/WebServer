@@ -365,9 +365,29 @@ void TcpConnection::hpSendFile(int srcFd, size_t count)
     {
         if (loop_->isInLoopThread())
         {
-            ssize_t n = sendfile(channel_->fd(), srcFd, NULL, count);
-            std::cout << n << std::endl;
-            assert(n == count);
+            size_t hasWrite = 0;
+            while (hasWrite < count)
+            {
+                ssize_t n = sendfile(channel_->fd(), srcFd, (off_t *)&hasWrite, count);
+                if (n == 0)
+                {
+                    break;
+                }
+                else if (n == -1)
+                {
+                    if (errno == EAGAIN)
+                    {
+                        continue;
+                    }
+                    else
+                    {
+                        // 在这里利用assert报错
+                        assert(false);
+                    }
+                }
+            }
+
+            assert(hasWrite == count);
         }
     }
 }

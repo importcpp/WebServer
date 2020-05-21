@@ -164,8 +164,8 @@ void HttpServer::onRequest(const TcpConnectionPtr &conn, const HttpRequest &req)
             Buffer buf;
             response.appendToBuffer(&buf);
             string temp = buf.retrieveAsString();
-            conn->send(temp);
-            
+            // conn->send(temp);
+            conn->sendAllOneTimeInLoop(temp);
             conn->hpSendFile(srcFd, filesize);
             close(srcFd);
         }

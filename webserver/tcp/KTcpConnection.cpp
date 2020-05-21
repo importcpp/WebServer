@@ -149,17 +149,19 @@ void TcpConnection::sendAllOneTimeInLoop(const std::string &message)
 {
     loop_->assertInLoopThread();
     ssize_t nwrote = 0;
+    ssize_t allwrote = 0;
     size_t remaining = message.size();
-    while(remaining > 0)
+    while (remaining > 0)
     {
 #ifdef USE_EPOLL_LT
-        nwrote = ::write(channel_->fd(), message.data(), message.size());
+        nwrote = ::write(channel_->fd(), message.data() + allwrote, remaining);
 #else
-        nwrote = writeET(channel_->fd(), message.data(), message.size());
+        nwrote = writeET(channel_->fd(), message.data() + allwrote, remaining);
 #endif
         if (nwrote >= 0)
         {
             remaining -= nwrote;
+            allwrote += nwrote;
         }
         else
         {
@@ -169,6 +171,7 @@ void TcpConnection::sendAllOneTimeInLoop(const std::string &message)
 #ifdef USE_STD_COUT
                 std::cout << "LOG_SYSERR:  "
                           << "TcpConnection::sendInLoop" << std::endl;
+                // abort();
 #endif
             }
         }

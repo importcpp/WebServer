@@ -145,6 +145,36 @@ void TcpConnection::sendInLoop(const std::string &message)
     }
 }
 
+void TcpConnection::sendAllOneTimeInLoop(const std::string &message)
+{
+    loop_->assertInLoopThread();
+    ssize_t nwrote = 0;
+    size_t remaining = message.size();
+    while(remaining > 0)
+    {
+#ifdef USE_EPOLL_LT
+        nwrote = ::write(channel_->fd(), message.data(), message.size());
+#else
+        nwrote = writeET(channel_->fd(), message.data(), message.size());
+#endif
+        if (nwrote >= 0)
+        {
+            remaining -= nwrote;
+        }
+        else
+        {
+            nwrote = 0;
+            if (errno != EWOULDBLOCK)
+            {
+#ifdef USE_STD_COUT
+                std::cout << "LOG_SYSERR:  "
+                          << "TcpConnection::sendInLoop" << std::endl;
+#endif
+            }
+        }
+    }
+}
+
 void TcpConnection::shutdown()
 {
     if (state_ == kConnected)

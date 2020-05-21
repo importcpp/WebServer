@@ -22,7 +22,7 @@ void HttpResponse::appendToBuffer(Buffer *output) const
     }
     else
     {
-        if (hasSetBody_ == true)
+        if (sendFile_ == false)
         {
             snprintf(buf, sizeof buf, "Content-Length: %zd\r\n", body_.size());
         }
@@ -43,7 +43,7 @@ void HttpResponse::appendToBuffer(Buffer *output) const
     }
 
     output->append("\r\n");
-    if (hasSetBody_ == true)
+    if (sendFile_ == false) // 不发送文件，则添加body_
     {
         output->append(body_);
     }

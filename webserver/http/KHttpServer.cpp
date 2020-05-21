@@ -21,33 +21,11 @@ void defaultHttpCallback(const HttpRequest &req, HttpResponse *resp)
     // 根据请求内容设置相应报文
     if (req.path() == "/file")
     {
-        // read file len
-        size_t filesize = -1;
-        struct stat statbuff;
-        if (stat("./index.html", &statbuff) < 0)
-        {
-            resp->setStatusCode(HttpResponse::k404NotFound);
-            resp->setStatusMessage("Not Found");
-            resp->setCloseConnection(true);
-        }
-        else
-        {
-            filesize = statbuff.st_size;
-            int srcFd = open("./index.html", O_RDONLY | O_NONBLOCK, 0);
-            if (srcFd < 0)
-            {
-                resp->setStatusCode(HttpResponse::k404NotFound);
-                resp->setStatusMessage("Not Found");
-                resp->setCloseConnection(true);
-            }
-            resp->setFileSize(filesize);
-            resp->setSrcFd(srcFd);
-            resp->setStatusCode(HttpResponse::k200Ok);
-            resp->setStatusMessage("OK");
-            resp->setContentType("text/html");
-            resp->addHeader("Server", "Webserver");
-            // 处理body留到之后的部分来处理
-        }
+        resp->setStatusCode(HttpResponse::k200Ok);
+        resp->setStatusMessage("OK");
+        resp->setContentType("text/html");
+        resp->addHeader("Server", "Webserver");
+        // 处理body留到之后的部分来处理
     }
     else if (req.path() == "/good")
     {
@@ -146,19 +124,51 @@ void HttpServer::onMessage(const TcpConnectionPtr &conn,
 void HttpServer::onRequest(const TcpConnectionPtr &conn, const HttpRequest &req)
 {
     const string &connection = req.getHeader("Connection");
-    bool close = connection == "close" ||
+    bool close_connection = connection == "close" ||
                  (req.getVersion() == HttpRequest::kHttp10 && connection != "Keep-Alive");
-    HttpResponse response(close);
+    HttpResponse response(close_connection);
     httpCallback_(req, &response);
 
     if (req.path() == "/file")
     {
+
         // read file len
-        Buffer buf;
-        response.appendToBuffer(&buf);
-        string temp = buf.retrieveAsString();
-        conn->send(temp);
-        conn->hpSendFile(response.getSrcFd(), response.getFileSize());
+        size_t filesize = -1;
+        struct stat statbuff;
+        if (stat("./index.html", &statbuff) < 0)
+        {
+            // Error 404
+            response.setStatusCode(HttpResponse::k404NotFound);
+            response.setStatusMessage("Not Found");
+            response.setCloseConnection(true);
+            Buffer buf;
+            response.appendToBuffer(&buf);
+            string temp = buf.retrieveAsString();
+            conn->send(temp);
+        }
+        else
+        {
+            filesize = statbuff.st_size;
+            assert(filesize > 0);
+            int srcFd = open("./index.html", O_RDONLY | O_NONBLOCK, 0);
+            if(srcFd <= 0)
+            {
+                assert(srcFd > 0);
+            }
+            response.setFileSize(filesize);
+            response.setSrcFd(srcFd);
+            response.setStatusCode(HttpResponse::k200Ok);
+            response.setStatusMessage("OK");
+            response.setContentType("text/html");
+            response.addHeader("Server", "Webserver");
+            Buffer buf;
+            response.appendToBuffer(&buf);
+            string temp = buf.retrieveAsString();
+            conn->send(temp);
+            
+            conn->hpSendFile(srcFd, filesize);
+            close(srcFd);
+        }
     }
     else
     {

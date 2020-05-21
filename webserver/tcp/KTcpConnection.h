@@ -43,6 +43,8 @@ public:
     bool connected() const { return state_ == kConnected; }
 
     void send(const std::string &message);
+    // 暂时没有设计成线程安全的，因为只会在IO调用
+    void sendAllOneTimeInLoop(const std::string &message);
     // void send(Buffer *buf);
     void shutdown();
     void setTcpNoDelay(bool on);
@@ -114,6 +116,7 @@ private:
     void handleClose();
     void handleError();
     void sendInLoop(const std::string &message);
+    
     void shutdownInLoop();
 
     EventLoop *loop_;

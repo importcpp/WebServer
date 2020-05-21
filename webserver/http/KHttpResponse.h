@@ -22,9 +22,8 @@ public:
     explicit HttpResponse(bool close)
         : statusCode_(kUnknown),
           closeConnection_(close),
-          hasSetBody_(false),
-          fileSize_(0),
-          srcFd_(0)
+          sendFile_(false),
+          fileSize_(0)
     {
     }
 
@@ -61,12 +60,12 @@ public:
     void setBody(const string &body)
     {
         body_ = body;
-        hasSetBody_ = true;
     }
 
     void setFileSize(size_t count)
     {
         fileSize_ = count;
+        sendFile_ = true;
     }
 
     void setSrcFd(size_t fd)
@@ -79,11 +78,6 @@ public:
         return fileSize_;
     }
 
-    size_t getSrcFd()
-    {
-        return srcFd_;
-    }
-
     void appendToBuffer(Buffer *output) const;
 
 private:
@@ -92,7 +86,7 @@ private:
 
     string statusMessage_;
     bool closeConnection_;
-    bool hasSetBody_;
+    bool sendFile_;
     string body_;
     size_t fileSize_;
     size_t srcFd_;

@@ -4,7 +4,9 @@
 
 ## Introduction
 
-本项目实现了一个基于Reactor模式的Web服务器，传输层采用I/O多路复用技术管理TCP连接，同时在应用层搭建了一个http服务器，用于响应Get请求，实现静态资源的访问。最后，本项目还可以在Web服务器的基础上自由扩展应用层服务，enjoy it!
+本项目实现了一个基于Reactor模式的Web服务器，传输层采用I/O多路复用技术管理TCP连接，同时在应用层搭建了一个http服务器，用于响应Get请求，实现静态资源的访问。最后，本项目还可以在Web服务器的基础上自由扩展应用层服务。
+
+Enjoy it，it's gonna be really fun!!!
 
 ## Environment
 

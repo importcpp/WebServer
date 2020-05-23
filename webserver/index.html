@@ -1,1 +1,27 @@
-Good good study!!!123456789
+<html lang="zh">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+    <h1>C++高性能服务器</h1>
+    <h2>Introduction</h2>
+    <p>本项目实现了一个基于Reactor模式的Web服务器，传输层采用I/O多路复用技术管理TCP连接，同时在应用层搭建了一个http服务器，用于响应Get请求，实现静态资源的访问。
+        最后，本项目还可以在Web服务器的基础上自由扩展应用层服务。Enjoy it!</p>
+    <h2>Technical points</h2>
+    <li>基于Reactor模式构建网络服务器，编程风格偏向面向过程</li>
+    <li>采用非阻塞IO，IO复用模式默认是ET，可在编译前通过指定参数切换为LT模式，通过编译期确定工作模式，可以减少运行期不断判断条件造成的负担</li>
+    <li>线程间的工作模式: 主线程负责Accept请求，然后采用Round-bin分发的方式异步调用其他线程去管理请求端的IO事件</li>
+    <li>利用AsyncWaker类(使用eventfd)实现线程间的异步唤醒</li>
+    <li>实现LockFreeQueue用于任务的异步添加与移除，代替了常规的互斥锁管理临界区的方式</li>
+    <li>实现环形缓冲区作为Tcp读取数据和写入数据的缓冲类，使得数据被读取之后不需要移动其余元素的位置来在尾部腾出空间，针对环形缓冲区读或者写空间可能会出现不连续的情况，在Read和Write的处理上，使用了readv和writev系统调用读取不连续的内存(只需要一次系统调用)，解决了系统调用和拷贝带来的开销
+    </li>
+    <li>采用智能指针管理对象的资源</li>
+    <li>加入了TcpConnection对象的回收机制，用于回收Tcp Connection对象中的资源，避免多次创建的开销</li>
+
+</body>
+
+</html>

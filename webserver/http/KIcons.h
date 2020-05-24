@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
-extern char favicon[555] = {
+
+static char favicon[555] = {
   '\x89', 'P', 'N', 'G', '\xD', '\xA', '\x1A', '\xA',
   '\x0', '\x0', '\x0', '\xD', 'I', 'H', 'D', 'R',
   '\x0', '\x0', '\x0', '\x10', '\x0', '\x0', '\x0', '\x10',
@@ -72,5 +73,3 @@ extern char favicon[555] = {
   '\x0', '\x0', '\x0', 'I', 'E', 'N', 'D', '\xAE',
   'B', '\x60', '\x82',
 };
-
-std::string Error404 = "HTTP/1.1 404 Not Found!\r\nContent-Length: 14\r\nConnection: close\r\nContent-Type: text/plain\r\nServer: Webserver\r\n\r\n404 Not Found!\n";

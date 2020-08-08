@@ -30,10 +30,14 @@ public:
     LockFreeQueue() : head_(new Node()), tail_(head_) {}
     ~LockFreeQueue()
     {
-        // Todo： 完成队列的析构
-        // 暂时好像没有必要
-        // 1. 任务队列与程序生命期相同
-        // 2. 肯定是要完成队列里面所有任务的
+        Node *tmp;
+        while (head_ != nullptr) {
+            tmp = head_;
+            head_ = head_->next_;
+            delete tmp;
+        }
+        tmp = nullptr;
+        tail_ = nullptr;
     }
 
     bool Try_Dequeue(T &data)

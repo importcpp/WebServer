@@ -6,15 +6,16 @@
             "command": "/usr/bin/g++",
             "args": [
                 "-I .",
+                "-O2",
                 // "-g",
                 "-std=c++11",
                 // "-Wall",
                 // "-D USE_STD_COUT",
                 // "-D USE_SPINLOCK",
                 "-D NDEBUG",
-                "-D USE_LOCKFREEQUEUE",
+                // "-D USE_LOCKFREEQUEUE",
                 // "-D USE_EPOLL_LT",
-                "-D USE_RINGBUFFER",
+                // "-D USE_RINGBUFFER",
                 // "-D USE_RECYCLE",
                 "${file}",
                 "${workspaceFolder}/loop/KEventLoop.cpp",
@@ -22,12 +23,9 @@
                 "${workspaceFolder}/loop/KEventLoopThreadPool.cpp",
                 "${workspaceFolder}/loop/KAsyncWaker.cpp",
                 "${workspaceFolder}/thread/KThreadPool.cpp",
-
                 "${workspaceFolder}/poller/KChannel.cpp",
                 "${workspaceFolder}/poller/KEventManager.cpp",
-
                 "${workspaceFolder}/utils/KTimestamp.cpp",
-
                 "${workspaceFolder}/tcp/KSocket.cpp",
                 "${workspaceFolder}/tcp/KSocketsOps.cpp",
                 "${workspaceFolder}/tcp/KInetAddress.cpp",
@@ -36,12 +34,11 @@
                 "${workspaceFolder}/tcp/KTcpConnection.cpp",
                 "${workspaceFolder}/tcp/KBuffer.cpp",
                 "${workspaceFolder}/tcp/KRingBuffer.cpp",
-
                 // http
                 "${workspaceFolder}/http/KHttpResponse.cpp",
                 "${workspaceFolder}/http/KHttpContext.cpp",
                 "${workspaceFolder}/http/KHttpServer.cpp",
-
+                "${workspaceFolder}/http/KIcons.cpp",
                 "-o",
                 "${fileDirname}/${fileBasenameNoExtension}",
                 "-lpthread"

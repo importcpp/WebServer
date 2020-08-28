@@ -3,8 +3,7 @@
 #include "../utils/Knoncopyable.h"
 #include <iostream>
 
-namespace kback
-{
+namespace kback {
 
 class InetAddress;
 
@@ -12,40 +11,35 @@ class InetAddress;
 // 在析构时关闭sockfd
 // 线程安全，所有操作都转交给OS
 
-class Socket : noncopyable
-{
+class Socket : noncopyable {
 public:
-    explicit Socket(int sockfd) : sockfd_(sockfd) {
-        // std::cout << "sockfd_ is:  " << sockfd_ << std::endl;
-    }
+  explicit Socket(int sockfd) : sockfd_(sockfd) {
+    // std::cout << "sockfd_ is:  " << sockfd_ << std::endl;
+  }
 
-    ~Socket();
+  ~Socket();
 
-    int fd() const
-    {
-        return sockfd_;
-    }
+  int fd() const { return sockfd_; }
 
-    void forceClose();
+  void forceClose();
 
+  // 服务端建立连接的三个流程
+  void bindAddress(const InetAddress &localaddr);
+  void listen();
 
-    // 服务端建立连接的三个流程
-    void bindAddress(const InetAddress &localaddr);
-    void listen();
+  int accept(InetAddress *peeraddr);
 
-    int accept(InetAddress *peeraddr);
+  // 设置地址重用
+  void setReuseAddr(bool on);
 
-    // 设置地址重用
-    void setReuseAddr(bool on);
+  void shutdownWrite();
 
-    void shutdownWrite();
-
-    /// TCP 的一些操作，也要记住
-    void setTcpNoDelay(bool on);
-    void setKeepAlive(bool on);
+  /// TCP 的一些操作，也要记住
+  void setTcpNoDelay(bool on);
+  void setKeepAlive(bool on);
 
 private:
-    const int sockfd_;
+  const int sockfd_;
 };
 
 } // namespace kback

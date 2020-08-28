@@ -1,26 +1,24 @@
 #pragma once
 
-#include <sys/eventfd.h>
 #include <iostream>
+#include <sys/eventfd.h>
 
-namespace kback
-{
+namespace kback {
 class EventLoop;
 class Channel;
-class AsyncWaker
-{
+class AsyncWaker {
 private:
-    /* data */
-    int wakerfd_;
-    EventLoop *loop_;
-    Channel *wakerchannel_;
-    void handleRead();
+  /* data */
+  int wakerfd_;
+  EventLoop *loop_;
+  Channel *wakerchannel_;
+  void handleRead();
 
 public:
-    AsyncWaker(EventLoop *loop);
-    ~AsyncWaker();
+  AsyncWaker(EventLoop *loop);
+  ~AsyncWaker();
 
-    void wakeup();
+  void wakeup();
 };
 
 } // namespace kback

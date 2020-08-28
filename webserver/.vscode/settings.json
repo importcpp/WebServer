@@ -53,6 +53,8 @@
         "typeindex": "cpp",
         "typeinfo": "cpp",
         "random": "cpp",
-        "string": "cpp"
-    }
+        "string": "cpp",
+        "cerrno": "cpp"
+    },
+    "editor.formatOnSave": true
 }

@@ -6,26 +6,23 @@
 
 #include "../utils/Knoncopyable.h"
 
-namespace kback
-{
+namespace kback {
 class EventLoop;
 
-class EventLoopThread : noncopyable
-{
+class EventLoopThread : noncopyable {
 public:
-    EventLoopThread();
-    ~EventLoopThread();
-    EventLoop* startLoop();
+  EventLoopThread();
+  ~EventLoopThread();
+  EventLoop *startLoop();
 
 private:
-    void threadFunc();
+  void threadFunc();
 
-    EventLoop* loop_;
-    bool exiting_;
-    std::thread thread_;
-    std::mutex mutex_;
-    std::condition_variable cond_;
-
+  EventLoop *loop_;
+  bool exiting_;
+  std::thread thread_;
+  std::mutex mutex_;
+  std::condition_variable cond_;
 };
 
 } // namespace kback

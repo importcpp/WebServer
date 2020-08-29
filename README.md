@@ -52,6 +52,10 @@ Enjoy it，it's gonna be really fun!!!
 
 ![模型架构](https://gitee.com/realgeorge/FIleForGithub/raw/master/file/serverarch2.png)
 
+## Class Structure
+
+![模型架构](https://gitee.com/realgeorge/FIleForGithub/raw/master/file/webserver_class_structure.png)
+
 ## Server Performance
 
 * 使用Ringbuffer减少数据的拷贝拷贝次数，在一分钟内测试1000个并发连接，使用RingBuffer使得QPS提升10%

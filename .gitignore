@@ -1,0 +1,6 @@
+# Codex local workspace artifacts
+/.codex
+/.codex/
+
+# Local benchmark build artifacts
+/webserver/benchmark_kTcpServer

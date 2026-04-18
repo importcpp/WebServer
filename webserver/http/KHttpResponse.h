@@ -1,5 +1,5 @@
-#include "../utils/KTypes.h"
-#include "../utils/Kcopyable.h"
+#include "webserver/utils/KTypes.h"
+#include "webserver/utils/Kcopyable.h"
 
 #include <map>
 
@@ -14,6 +14,7 @@ public:
     k301MovedPermanently = 301,
     k400BadRequest = 400,
     k404NotFound = 404,
+    k500InternalServerError = 500,
   };
 
   explicit HttpResponse(bool close)

@@ -9,8 +9,12 @@ EventLoopThread::EventLoopThread() : loop_(nullptr), exiting_(false) {}
 
 EventLoopThread::~EventLoopThread() {
   exiting_ = true;
-  loop_->quit();
-  thread_.join();
+  if (loop_ != nullptr) {
+    loop_->quit();
+  }
+  if (thread_.joinable()) {
+    thread_.join();
+  }
 }
 
 EventLoop *EventLoopThread::startLoop() {

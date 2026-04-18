@@ -2,11 +2,16 @@
 
 ## 测试日期
 
-2026-04-14
+2026-04-18
 
 ## 测试范围
 
 本文记录当前 `KTcpServer` 实现的一次本地 benchmark 结果。
+
+当前推荐压测配置：
+
+- `make benchmark_kTcpServer MODE=release`
+- 默认关闭 `USE_RINGBUFFER`
 
 本次测试 **不经过 HTTP 解析路径**，目标是测试 TCP 核心链路：
 
@@ -25,9 +30,9 @@ Benchmark 源文件：
 
 - Repository: `WebServer`
 - Compiler: `g++ 10.2.1`
-- 构建时安装的依赖: `boost-devel`
+- 构建依赖: Linux、`make`、支持 C++17 的 `g++`/`clang++`，无 Boost 依赖
 - 测试方式: localhost `127.0.0.1`
-- Benchmark 可执行文件: `webserver/benchmark_kTcpServer`
+- Benchmark 可执行文件: `build/bin/benchmark_kTcpServer`
 
 ## 测试方法
 
@@ -39,37 +44,26 @@ Benchmark 源文件：
 
 ## 编译命令
 
-在 `webserver/` 目录下执行：
+在仓库根目录执行：
 
 ```bash
-g++ -I . -O2 -std=c++11 -D NDEBUG runHttpServer.cpp \
-  loop/KEventLoop.cpp loop/KEventLoopThread.cpp loop/KEventLoopThreadPool.cpp loop/KAsyncWaker.cpp \
-  thread/KThreadPool.cpp poller/KChannel.cpp poller/KEventManager.cpp utils/KTimestamp.cpp \
-  tcp/KSocket.cpp tcp/KSocketsOps.cpp tcp/KInetAddress.cpp tcp/KAcceptor.cpp tcp/KTcpServer.cpp tcp/KTcpConnection.cpp tcp/KBuffer.cpp tcp/KRingBuffer.cpp \
-  http/KHttpResponse.cpp http/KHttpContext.cpp http/KHttpServer.cpp http/KIcons.cpp \
-  -o runHttpServer -lpthread
-
-g++ -I . -O2 -std=c++11 -D NDEBUG benchmark_kTcpServer.cpp \
-  loop/KEventLoop.cpp loop/KEventLoopThread.cpp loop/KEventLoopThreadPool.cpp loop/KAsyncWaker.cpp \
-  thread/KThreadPool.cpp poller/KChannel.cpp poller/KEventManager.cpp utils/KTimestamp.cpp \
-  tcp/KSocket.cpp tcp/KSocketsOps.cpp tcp/KInetAddress.cpp tcp/KAcceptor.cpp tcp/KTcpServer.cpp tcp/KTcpConnection.cpp tcp/KBuffer.cpp tcp/KRingBuffer.cpp \
-  http/KHttpResponse.cpp http/KHttpContext.cpp http/KHttpServer.cpp http/KIcons.cpp \
-  -o benchmark_kTcpServer -lpthread
+make benchmark_kTcpServer MODE=release
+make runHttpServer MODE=release
 ```
 
 ## 执行命令
 
 ```bash
-./benchmark_kTcpServer --io-threads 3 --client-threads 8 --requests-per-thread 20000 --payload-size 64
-./benchmark_kTcpServer --io-threads 3 --client-threads 8 --requests-per-thread 20000 --payload-size 1024
+./build/bin/benchmark_kTcpServer --io-threads 3 --client-threads 8 --requests-per-thread 20000 --payload-size 64
+./build/bin/benchmark_kTcpServer --io-threads 3 --client-threads 8 --requests-per-thread 20000 --payload-size 1024
 ```
 
 ## 测试结果
 
 | io_threads | client_threads | requests_per_thread | payload_size | total_requests | elapsed_seconds | throughput_req_per_sec | throughput_mib_per_sec | avg_round_trip_us_per_connection |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| 3 | 8 | 20000 | 64 B | 160000 | 0.45 | 357486.96 | 21.82 | 22.38 |
-| 3 | 8 | 20000 | 1024 B | 160000 | 0.47 | 339615.77 | 331.66 | 23.56 |
+| 3 | 8 | 20000 | 64 B | 160000 | 0.44 | 362564.35 | 22.13 | 22.07 |
+| 3 | 8 | 20000 | 1024 B | 160000 | 0.46 | 349087.37 | 340.91 | 22.92 |
 
 ## 原始输出
 
@@ -85,10 +79,10 @@ Benchmark: KTcpServer echo round-trip
 Results:
   total_requests: 160000
   total_bytes: 10240000
-  elapsed_seconds: 0.45
-  throughput_req_per_sec: 357486.96
-  throughput_mib_per_sec: 21.82
-  avg_round_trip_us_per_connection: 22.38
+  elapsed_seconds: 0.44
+  throughput_req_per_sec: 362564.35
+  throughput_mib_per_sec: 22.13
+  avg_round_trip_us_per_connection: 22.07
 Server stats:
   accepted_connections: 8
   closed_connections: 8
@@ -108,10 +102,10 @@ Benchmark: KTcpServer echo round-trip
 Results:
   total_requests: 160000
   total_bytes: 163840000
-  elapsed_seconds: 0.47
-  throughput_req_per_sec: 339615.77
-  throughput_mib_per_sec: 331.66
-  avg_round_trip_us_per_connection: 23.56
+  elapsed_seconds: 0.46
+  throughput_req_per_sec: 349087.37
+  throughput_mib_per_sec: 340.91
+  avg_round_trip_us_per_connection: 22.92
 Server stats:
   accepted_connections: 8
   closed_connections: 8

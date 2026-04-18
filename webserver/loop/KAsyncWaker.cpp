@@ -1,12 +1,15 @@
 #include "KAsyncWaker.h"
-#include "../poller/KChannel.h"
 #include "KEventLoop.h"
+#include "webserver/poller/KChannel.h"
+
+#include <errno.h>
+#include <unistd.h>
 
 using namespace kback;
 
 AsyncWaker::AsyncWaker(EventLoop *loop)
     : wakerfd_(::eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC)), loop_(loop),
-      wakerchannel_(new Channel(loop, wakerfd_)) {
+      wakerchannel_(std::make_unique<Channel>(loop, wakerfd_)) {
   if (wakerfd_ < 0) {
 #ifdef USE_STD_COUT
     std::cout << "LOG_SYSERR:   "
@@ -15,11 +18,15 @@ AsyncWaker::AsyncWaker(EventLoop *loop)
     abort();
   }
 
-  wakerchannel_->setReadCallback(std::bind(&AsyncWaker::handleRead, this));
+  wakerchannel_->setReadCallback([this](Timestamp) { handleRead(); });
   wakerchannel_->enableReading();
 }
 
-AsyncWaker::~AsyncWaker() { ::close(wakerfd_); }
+AsyncWaker::~AsyncWaker() {
+  wakerchannel_->disableAll();
+  loop_->removeChannel(wakerchannel_.get());
+  ::close(wakerfd_);
+}
 
 void AsyncWaker::handleRead() {
   loop_->assertInLoopThread();
@@ -40,7 +47,7 @@ void AsyncWaker::wakeup() {
   uint64_t one = 1;
   ssize_t n = ::write(wakerfd_, &one, sizeof one);
   // 判断写入的字节是不是 one对应的字节数
-  if (n != sizeof one) {
+  if (n != sizeof one && errno != EAGAIN) {
 #ifdef USE_STD_COUT
     std::cout << "LOG_ERROR:   "
               << "AsyncWaker::wakeup() writes " << n << " bytes instead of 8"

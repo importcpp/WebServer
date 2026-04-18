@@ -1,28 +1,33 @@
 #include "KTcpServer.h"
-#include "../loop/KEventLoop.h"
-#include "../loop/KEventLoopThreadPool.h"
-#include "../utils/KTypes.h"
+#include "webserver/loop/KEventLoop.h"
+#include "webserver/loop/KEventLoopThreadPool.h"
+#include "webserver/utils/KTypes.h"
 #include "KAcceptor.h"
 #include "KSocketsOps.h"
 
 using namespace kback;
 
 TcpServer::TcpServer(EventLoop *loop, const InetAddress &listenAddr)
-    : loop_(CheckNotNull<EventLoop>(loop)), name_(listenAddr.toHostPort()),
+    : loop_(CheckNotNull<EventLoop>(loop)), ipPort_(listenAddr.toHostPort()),
+      name_(listenAddr.toHostPort()),
       acceptor_(new Acceptor(loop, listenAddr)), started_(false),
       nextConnId_(1), threadPool_(new EventLoopThreadPool(loop)) {
   acceptor_->setNewConnectionCallback(
-      std::bind(&TcpServer::newConnection, this, _1, _2));
+      [this](int sockfd, const InetAddress &peerAddr) {
+        newConnection(sockfd, peerAddr);
+      });
 }
 
 TcpServer::TcpServer(EventLoop *loop, const InetAddress &listenAddr,
                      const string &nameArg)
     : loop_(CheckNotNull<EventLoop>(loop)), ipPort_(listenAddr.toHostPort()),
       name_(nameArg), acceptor_(new Acceptor(loop, listenAddr)),
-      threadPool_(new EventLoopThreadPool(loop)), started_(false),
-      nextConnId_(1) {
+      started_(false), nextConnId_(1),
+      threadPool_(new EventLoopThreadPool(loop)) {
   acceptor_->setNewConnectionCallback(
-      std::bind(&TcpServer::newConnection, this, _1, _2));
+      [this](int sockfd, const InetAddress &peerAddr) {
+        newConnection(sockfd, peerAddr);
+      });
 }
 
 TcpServer::~TcpServer() {}
@@ -38,7 +43,7 @@ void TcpServer::start() {
     threadPool_->start();
   }
   if (!acceptor_->listenning()) {
-    loop_->runInLoop(std::bind(&Acceptor::listen, get_pointer(acceptor_)));
+    loop_->runInLoop([this] { acceptor_->listen(); });
   }
 }
 
@@ -68,9 +73,13 @@ void TcpServer::newConnection(int sockfd, const InetAddress &peerAddr) {
     conn->setConnectionCallback(connectionCallback_);
     conn->setMessageCallback(messageCallback_);
     conn->setWriteCompleteCallback(writeCompleteCallback_);
-    conn->setCloseCallback(std::bind(&TcpServer::removeConnection, this, _1));
-    conn->setRecycleCallback(std::bind(&TcpServer::recycleCallback, this, _1));
-    ioLoop->runInLoop(std::bind(&TcpConnection::connectEstablished, conn));
+    conn->setCloseCallback([this](const TcpConnectionPtr &connection) {
+      removeConnection(connection);
+    });
+    conn->setRecycleCallback([this](const TcpConnectionPtr connection) {
+      recycleCallback(connection);
+    });
+    ioLoop->runInLoop([conn] { conn->connectEstablished(); });
     return;
   }
 #endif
@@ -81,15 +90,19 @@ void TcpServer::newConnection(int sockfd, const InetAddress &peerAddr) {
   conn->setConnectionCallback(connectionCallback_);
   conn->setMessageCallback(messageCallback_);
   conn->setWriteCompleteCallback(writeCompleteCallback_);
-  conn->setCloseCallback(std::bind(&TcpServer::removeConnection, this, _1));
+  conn->setCloseCallback([this](const TcpConnectionPtr &connection) {
+    removeConnection(connection);
+  });
 #ifdef USE_RECYCLE
-  conn->setRecycleCallback(std::bind(&TcpServer::recycleCallback, this, _1));
+  conn->setRecycleCallback([this](const TcpConnectionPtr connection) {
+    recycleCallback(connection);
+  });
 #endif
-  ioLoop->runInLoop(std::bind(&TcpConnection::connectEstablished, conn));
+  ioLoop->runInLoop([conn] { conn->connectEstablished(); });
 }
 
 void TcpServer::removeConnection(const TcpConnectionPtr &conn) {
-  loop_->runInLoop(std::bind(&TcpServer::removeConnectionInLoop, this, conn));
+  loop_->runInLoop([this, conn] { removeConnectionInLoop(conn); });
 }
 
 void TcpServer::removeConnectionInLoop(const TcpConnectionPtr &conn) {
@@ -109,5 +122,5 @@ void TcpServer::removeConnectionInLoop(const TcpConnectionPtr &conn) {
   assert(n == 1);
   (void)n;
   EventLoop *ioLoop = conn->getLoop();
-  ioLoop->queueInLoop(std::bind(&TcpConnection::connectDestroyed, conn));
+  ioLoop->queueInLoop([conn] { conn->connectDestroyed(); });
 }

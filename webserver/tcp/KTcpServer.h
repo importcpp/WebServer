@@ -1,8 +1,8 @@
 #pragma once
 
-#include "../lock/KSpinLock.h"
-#include "../utils/KCallbacks.h"
-#include "../utils/Knoncopyable.h"
+#include "webserver/lock/KSpinLock.h"
+#include "webserver/utils/KCallbacks.h"
+#include "webserver/utils/Knoncopyable.h"
 #include "KInetAddress.h"
 #include "KTcpConnection.h"
 #include <map>

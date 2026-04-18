@@ -1,6 +1,7 @@
 #include "KEventManager.h"
 #include "KChannel.h"
 #include <assert.h>
+#include <cstdlib>
 #include <errno.h>
 #include <iostream>
 #include <poll.h>
@@ -23,6 +24,7 @@ EventManager::EventManager(EventLoop *loop)
     std::cout << "LOG_SYSFATAL:   "
               << "EventManager::EventManager" << std::endl;
 #endif
+    std::abort();
   }
 }
 
@@ -66,6 +68,8 @@ Timestamp EventManager::poll(int timeoutMs, ChannelList *activeChannels) {
 void EventManager::fillActiveChannels(int numEvents,
                                       ChannelList *activeChannels) const {
   assert(implicit_cast<size_t>(numEvents) <= events_.size());
+  activeChannels->reserve(activeChannels->size() +
+                          static_cast<size_t>(numEvents));
   for (int i = 0; i < numEvents; ++i) {
     Channel *channel = static_cast<Channel *>(events_[i].data.ptr);
     channel->set_revents(events_[i].events);

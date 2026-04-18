@@ -1,7 +1,7 @@
 #ifdef USE_RINGBUFFER
 #else
 #pragma once
-#include "../utils/Kcopyable.h"
+#include "webserver/utils/Kcopyable.h"
 
 #include <algorithm>
 #include <string>

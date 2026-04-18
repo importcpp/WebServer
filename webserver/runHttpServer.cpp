@@ -1,7 +1,7 @@
-#include "http/KHttpRequest.h"
-#include "http/KHttpResponse.h"
-#include "http/KHttpServer.h"
-#include "loop/KEventLoop.h"
+#include "webserver/http/KHttpRequest.h"
+#include "webserver/http/KHttpResponse.h"
+#include "webserver/http/KHttpServer.h"
+#include "webserver/loop/KEventLoop.h"
 #include <iostream>
 #include <map>
 
@@ -14,6 +14,7 @@ int main(int argc, char *argv[]) {
   }
   EventLoop loop;
   HttpServer server(&loop, InetAddress(8888), "httpserver");
+  server.setStaticFileRoot("webserver");
   server.setThreadNum(numThreads);
   server.start();
   loop.loop();

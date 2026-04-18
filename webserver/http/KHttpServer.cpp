@@ -1,16 +1,16 @@
 #include "KHttpServer.h"
-#include "../utils/KCallbacks.h"
 #include "KHttpContext.h"
+#include "KIcons.h"
 #include "KHttpRequest.h"
 #include "KHttpResponse.h"
-#include "KIcons.h"
-#include <fcntl.h>
+#include "webserver/utils/KCallbacks.h"
+
+#include <any>
 #include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/stat.h>
-#include <sys/types.h>
+#include <unistd.h>
 
 extern char favicon[555];
 
@@ -18,13 +18,7 @@ using namespace kback;
 
 void defaultHttpCallback(const HttpRequest &req, HttpResponse *resp) {
   // 根据请求内容设置相应报文
-  if (req.path() == "/file") {
-    resp->setStatusCode(HttpResponse::k200Ok);
-    resp->setStatusMessage("OK");
-    resp->setContentType("text/html");
-    resp->addHeader("Server", "Webserver");
-    // 处理body留到之后的部分来处理
-  } else if (req.path() == "/good") {
+  if (req.path() == "/good") {
     resp->setStatusCode(HttpResponse::k200Ok);
     resp->setStatusMessage("OK");
     resp->setContentType("text/plain");
@@ -62,10 +56,21 @@ void defaultHttpCallback(const HttpRequest &req, HttpResponse *resp) {
 
 HttpServer::HttpServer(EventLoop *loop, const InetAddress &listenAddr,
                        const string &name)
-    : server_(loop, listenAddr, name), httpCallback_(defaultHttpCallback) {
-  server_.setConnectionCallback(std::bind(&HttpServer::onConnection, this, _1));
+    : server_(loop, listenAddr, name), httpCallback_(defaultHttpCallback),
+      staticFileRoot_(".") {
+  staticFileCache_.setRoot(staticFileRoot_);
+  server_.setConnectionCallback([this](const TcpConnectionPtr &conn) {
+    onConnection(conn);
+  });
   server_.setMessageCallback(
-      std::bind(&HttpServer::onMessage, this, _1, _2, _3));
+      [this](const TcpConnectionPtr &conn, Buffer *buf, Timestamp receiveTime) {
+        onMessage(conn, buf, receiveTime);
+      });
+}
+
+void HttpServer::setStaticFileRoot(string root) {
+  staticFileRoot_ = root.empty() ? "." : std::move(root);
+  staticFileCache_.setRoot(staticFileRoot_);
 }
 
 void HttpServer::start() {
@@ -87,8 +92,8 @@ void HttpServer::onConnection(const TcpConnectionPtr &conn) {
 // 设置为TcpConnection的messageCallback_
 void HttpServer::onMessage(const TcpConnectionPtr &conn, Buffer *buf,
                            Timestamp receiveTime) {
-  HttpContext *context =
-      boost::any_cast<HttpContext>(conn->getMutableContext());
+  HttpContext *context = std::any_cast<HttpContext>(conn->getMutableContext());
+  assert(context != nullptr);
 
   if (!context->parseRequest(buf, receiveTime)) {
     conn->send("HTTP/1.1 400 Bad Request\r\n\r\n");
@@ -107,50 +112,47 @@ void HttpServer::onRequest(const TcpConnectionPtr &conn,
   bool close_connection =
       connection == "close" ||
       (req.getVersion() == HttpRequest::kHttp10 && connection != "Keep-Alive");
-  HttpResponse response(close_connection);
-  httpCallback_(req, &response);
-
   if (req.path() == "/file") {
-
-    // read file len
-    size_t filesize = -1;
-    struct stat statbuff;
-    if (stat("./index.html", &statbuff) < 0) {
-      // Error 404
+    auto entry = staticFileCache_.find("/index.html");
+    HttpResponse response(close_connection);
+    if (entry == nullptr) {
       response.setStatusCode(HttpResponse::k404NotFound);
       response.setStatusMessage("Not Found");
       response.setCloseConnection(true);
-      Buffer buf;
-      response.appendToBuffer(&buf);
-      string temp = buf.retrieveAsString();
-      conn->send(temp);
+      sendResponse(conn, response);
     } else {
-      filesize = statbuff.st_size;
-      assert(filesize > 0);
-      int srcFd = open("./index.html", O_RDONLY | O_NONBLOCK, 0);
-      if (srcFd <= 0) {
-        assert(srcFd > 0);
+      const int fileFd = ::dup(entry->fileFd);
+      if (fileFd < 0) {
+        response.setStatusCode(HttpResponse::k500InternalServerError);
+        response.setStatusMessage("Internal Server Error");
+        response.setCloseConnection(true);
+        sendResponse(conn, response);
+        return;
       }
-      response.setFileSize(filesize);
-      response.setSrcFd(srcFd);
+      response.setFileSize(entry->fileSize);
       response.setStatusCode(HttpResponse::k200Ok);
       response.setStatusMessage("OK");
-      response.setContentType("text/html");
+      response.setContentType(entry->contentType);
       response.addHeader("Server", "Webserver");
-      Buffer buf;
-      response.appendToBuffer(&buf);
-      string temp = buf.retrieveAsString();
-      // conn->send(temp);
-      conn->sendAllOneTimeInLoop(temp);
-      conn->hpSendFile(srcFd, filesize);
-      close(srcFd);
+      sendResponse(conn, response, fileFd, entry->fileSize);
     }
-  } else {
-    Buffer buf;
-    response.appendToBuffer(&buf);
-    // conn->send(&buf);
-    string temp = buf.retrieveAsString();
-    conn->send(temp);
+    return;
+  }
+
+  HttpResponse response(close_connection);
+  httpCallback_(req, &response);
+  sendResponse(conn, response);
+}
+
+void HttpServer::sendResponse(const TcpConnectionPtr &conn,
+                              const HttpResponse &response, int fileFd,
+                              size_t fileSize) {
+  Buffer buffer;
+  response.appendToBuffer(&buffer);
+  conn->send(buffer.retrieveAsString());
+
+  if (fileFd >= 0) {
+    conn->hpSendFile(fileFd, fileSize);
   }
 
   if (response.closeConnection()) {

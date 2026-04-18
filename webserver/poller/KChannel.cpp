@@ -1,7 +1,7 @@
 #include "KChannel.h"
-#include "../loop/KEventLoop.h"
+#include "webserver/loop/KEventLoop.h"
 
-#include "../utils/KTypes.h"
+#include "webserver/utils/KTypes.h"
 #include <iostream>
 #include <poll.h>
 #include <sstream>
@@ -62,9 +62,11 @@ void Channel::handleEvent(Timestamp receiveTime) {
   eventHandling_ = false;
 }
 
-string Channel::eventsToString() const { return eventsToString(fd_, events_); }
+std::string Channel::eventsToString() const {
+  return eventsToString(fd_, events_);
+}
 
-string Channel::eventsToString(int fd, int ev) {
+std::string Channel::eventsToString(int fd, int ev) {
   std::ostringstream oss;
   oss << fd << ": ";
   if (ev & POLLIN)

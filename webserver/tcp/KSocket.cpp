@@ -6,7 +6,7 @@
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 
-#include "../utils/KTypes.h" // memZero
+#include "webserver/utils/KTypes.h" // memZero
 
 using namespace kback;
 
@@ -38,6 +38,15 @@ int Socket::accept(InetAddress *peeraddr) {
 void Socket::setReuseAddr(bool on) {
   int optval = on ? 1 : 0;
   ::setsockopt(sockfd_, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof optval);
+}
+
+void Socket::setReusePort(bool on) {
+#ifdef SO_REUSEPORT
+  int optval = on ? 1 : 0;
+  ::setsockopt(sockfd_, SOL_SOCKET, SO_REUSEPORT, &optval, sizeof optval);
+#else
+  (void)on;
+#endif
 }
 
 void Socket::shutdownWrite() { sockets::shutdownWrite(sockfd_); }

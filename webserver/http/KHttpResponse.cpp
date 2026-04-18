@@ -1,8 +1,8 @@
 #include "KHttpResponse.h"
 #ifdef USE_RINGBUFFER
-#include "../tcp/KRingBuffer.h"
+#include "webserver/tcp/KRingBuffer.h"
 #else
-#include "../tcp/KBuffer.h"
+#include "webserver/tcp/KBuffer.h"
 #endif
 #include <stdio.h>
 
@@ -19,10 +19,10 @@ void HttpResponse::appendToBuffer(Buffer *output) const {
     output->append("Connection: close\r\n");
   } else {
     if (sendFile_ == false) {
-      snprintf(buf, sizeof buf, "Content-Length: %zd\r\n", body_.size());
+      snprintf(buf, sizeof buf, "Content-Length: %zu\r\n", body_.size());
     } else {
       //
-      snprintf(buf, sizeof buf, "Content-Length: %zd\r\n", fileSize_);
+      snprintf(buf, sizeof buf, "Content-Length: %zu\r\n", fileSize_);
     }
     output->append(buf);
     output->append("Connection: Keep-Alive\r\n");

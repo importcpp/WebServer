@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../utils/Knoncopyable.h"
+#include "webserver/utils/Knoncopyable.h"
 #include <iostream>
 
 namespace kback {
@@ -31,6 +31,7 @@ public:
 
   // 设置地址重用
   void setReuseAddr(bool on);
+  void setReusePort(bool on);
 
   void shutdownWrite();
 

@@ -1,9 +1,9 @@
 #pragma once
 
-#include "../loop/KEventLoop.h"
-#include "../utils/KTimestamp.h"
-#include "../utils/Knoncopyable.h"
-#include <map>
+#include "webserver/loop/KEventLoop.h"
+#include "webserver/utils/KTimestamp.h"
+#include "webserver/utils/Knoncopyable.h"
+#include <unordered_map>
 #include <vector>
 
 struct epoll_event;
@@ -38,7 +38,7 @@ private:
   typedef std::vector<struct epoll_event> EventList;
 
 private:
-  typedef std::map<int, Channel *> ChannelMap;
+  typedef std::unordered_map<int, Channel *> ChannelMap;
   ChannelMap channels_; // 从fd到channel*的映射
   EventLoop *ownerLoop_;
 

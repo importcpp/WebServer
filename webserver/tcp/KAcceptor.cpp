@@ -1,6 +1,6 @@
 #include "KAcceptor.h"
 
-#include "../loop/KEventLoop.h"
+#include "webserver/loop/KEventLoop.h"
 #include "KInetAddress.h"
 #include "KSocketsOps.h"
 
@@ -10,23 +10,23 @@ Acceptor::Acceptor(EventLoop *loop, const InetAddress &listenAddr)
     : loop_(loop), acceptSocket_(sockets::createNonblockingOrDie()),
       acceptChannel_(loop, acceptSocket_.fd()), listenning_(false) {
   acceptSocket_.setReuseAddr(true);
+  acceptSocket_.setReusePort(true);
 
   // tcp的bind过程，里面类型转换比较有意思
   acceptSocket_.bindAddress(listenAddr);
-  acceptChannel_.setReadCallback(std::bind(&Acceptor::handleRead, this));
+  acceptChannel_.setReadCallback([this](Timestamp) { handleRead(); });
 }
 
 Acceptor::Acceptor(EventLoop *loop, const InetAddress &listenAddr,
                    bool reuseport)
     : loop_(loop), acceptSocket_(sockets::createNonblockingOrDie()),
       acceptChannel_(loop, acceptSocket_.fd()), listenning_(false) {
-  if (reuseport == true) {
-    acceptSocket_.setReuseAddr(true);
-  }
+  acceptSocket_.setReuseAddr(true);
+  acceptSocket_.setReusePort(reuseport);
 
   // tcp的bind过程，里面类型转换比较有意思
   acceptSocket_.bindAddress(listenAddr);
-  acceptChannel_.setReadCallback(std::bind(&Acceptor::handleRead, this));
+  acceptChannel_.setReadCallback([this](Timestamp) { handleRead(); });
 }
 
 // 在TCP编程中

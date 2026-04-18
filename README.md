@@ -11,8 +11,33 @@ Enjoy it，it's gonna be really fun!!!
 ## Environment
 
 - OS: Ubuntu 16.04
-- Complier: g++ 5.4.0
-- Tools: CMake/VScode
+- Compiler: g++ 10+ / clang++ 12+
+- Tools: `make` / CMake / VSCode
+
+## Build
+
+默认使用顶层 `Makefile`，统一开启 C++17，并支持按需切换性能相关编译开关。
+
+```bash
+make
+make benchmark_kTcpServer MODE=release
+make runHttpServer MODE=release
+```
+
+产物默认生成到 `build/bin/`:
+
+- `build/bin/runHttpServer`
+- `build/bin/benchmark_kTcpServer`
+- `build/bin/test_kthreadpool`
+
+可选特性开关：
+
+- `USE_RINGBUFFER=1`（实验性，不作为默认推荐配置）
+- `USE_LOCKFREEQUEUE=1`
+- `USE_SPINLOCK=1`
+- `USE_RECYCLE=1`
+- `USE_EPOLL_LT=1`
+- `USE_STDOUT_LOGGING=1`
 
 ## Technical points
 

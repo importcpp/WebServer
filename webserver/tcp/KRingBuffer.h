@@ -1,6 +1,6 @@
 #ifdef USE_RINGBUFFER
 #pragma once
-#include "../utils/Kcopyable.h"
+#include "webserver/utils/Kcopyable.h"
 
 #include <algorithm>
 #include <assert.h>
@@ -23,7 +23,7 @@ public:
   }
 
   ~Buffer() {
-    delete buffer_;
+    delete[] buffer_;
     buffer_ = nullptr;
     capacity_ = 0;
   }
@@ -69,11 +69,13 @@ public:
   }
 
   void retrieveUntil(const char *end) {
-    // !!! 没有做合法性检查
-    if ((end >= begin()) && end < peek()) {
-      retrieve(end - peek() + capacity_);
+    assert(end >= begin());
+    assert(end < end());
+    if (end >= peek()) {
+      retrieve(static_cast<size_t>(end - peek()));
+      return;
     }
-    retrieve(end - peek());
+    retrieve(static_cast<size_t>(end - begin()) + capacity_ - readerIndex_);
   }
 
   void retrieveAll() {
@@ -118,6 +120,7 @@ public:
     // 可以和std::copy对比下，看看哪个性能更高
     if (writerIndex_ < readerIndex_) {
       memcpy(beginWrite(), data, len);
+      writerIndex_ += len;
     } else {
       // 看看尾部预留的空间大小
       size_t reserve_tail = capacity_ - writerIndex_;

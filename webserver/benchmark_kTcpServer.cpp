@@ -1,5 +1,5 @@
-#include "loop/KEventLoop.h"
-#include "tcp/KTcpServer.h"
+#include "webserver/loop/KEventLoop.h"
+#include "webserver/tcp/KTcpServer.h"
 
 #include <arpa/inet.h>
 #include <errno.h>
@@ -209,9 +209,11 @@ public:
         stats_(stats) {
     server_.setThreadNum(ioThreads);
     server_.setConnectionCallback(
-        std::bind(&EchoServer::onConnection, this, _1));
-    server_.setMessageCallback(std::bind(&EchoServer::onMessage, this, _1, _2,
-                                         _3));
+        [this](const TcpConnectionPtr &conn) { onConnection(conn); });
+    server_.setMessageCallback([this](const TcpConnectionPtr &conn, Buffer *buf,
+                                      Timestamp receiveTime) {
+      onMessage(conn, buf, receiveTime);
+    });
   }
 
   void start() { server_.start(); }
@@ -227,13 +229,13 @@ private:
   }
 
   void onMessage(const TcpConnectionPtr &conn, Buffer *buf, Timestamp) {
-    const std::string payload = buf->retrieveAsString();
-    if (payload.empty()) {
+    const size_t payloadSize = buf->readableBytes();
+    if (payloadSize == 0) {
       return;
     }
     stats_->echoed_messages.fetch_add(1, std::memory_order_relaxed);
-    stats_->echoed_bytes.fetch_add(payload.size(), std::memory_order_relaxed);
-    conn->send(payload);
+    stats_->echoed_bytes.fetch_add(payloadSize, std::memory_order_relaxed);
+    conn->send(buf);
   }
 
   TcpServer server_;

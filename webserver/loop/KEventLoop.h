@@ -1,23 +1,23 @@
 #pragma once
 
 #include <assert.h>
+#include <atomic>
 #include <functional>
 #include <iostream>
 #include <memory>
 #include <mutex>
 #include <thread>
-#include <thread>
 #include <vector>
 
-#include "../utils/KTimestamp.h"
-#include "../utils/Knoncopyable.h"
+#include "webserver/utils/KTimestamp.h"
+#include "webserver/utils/Knoncopyable.h"
 
 #ifdef USE_LOCKFREEQUEUE
-#include "../lock/KLockFreeQueue.h"
+#include "webserver/lock/KLockFreeQueue.h"
 #endif
 
 #ifdef USE_SPINLOCK
-#include "../lock/KSpinLock.h"
+#include "webserver/lock/KSpinLock.h"
 #endif
 
 namespace kback {
@@ -39,9 +39,9 @@ public:
   // 如果用户在当前IO线程调用这个函数，回调会同步进行;
   // 如果用户在其他线程调用runInLoop(),
   // cb会被加入队列，IO线程会被唤醒来调用这个Functor
-  void runInLoop(const Functor &cb);
+  void runInLoop(Functor cb);
   // note: 将cb放入队列，并在必要时唤醒IO线程
-  void queueInLoop(const Functor &cb);
+  void queueInLoop(Functor cb);
 
   void wakeup();
   void updateChannel(Channel *channel);
@@ -70,7 +70,7 @@ private:
   // 不需要担心EventManager_的销毁问题
   std::unique_ptr<EventManager> eventmanager_;
 
-  bool quit_; // atomic
+  std::atomic<bool> quit_;
   Timestamp pollReturnTime_;
 
   // 全部用于唤醒机制
@@ -78,7 +78,7 @@ private:
   void doPendingFunctors();
   bool callingPendingFunctors_;
 
-  std::unique_ptr<AsyncWaker> asyncwaker;
+  std::unique_ptr<AsyncWaker> asyncWaker_;
 
 #ifdef USE_LOCKFREEQUEUE
   LockFreeQueue<Functor> pendingFunctors_;

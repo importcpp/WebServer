@@ -1,22 +1,20 @@
 #include "KEventLoop.h"
-#include "../poller/KChannel.h"
-#include "../poller/KEventManager.h"
 #include "KAsyncWaker.h"
-#include <signal.h>
-#include <sys/eventfd.h>
+#include "webserver/poller/KChannel.h"
+#include "webserver/poller/KEventManager.h"
 
 using namespace kback;
 
 // 通过 __thread 来保证一个线程只能创建一个 EventLoop
 // __thread 变量是每个线程有的一份独立的实体
 // 类似于static 只在编译期初始化
-__thread EventLoop *t_loopInThisThread = 0;
+thread_local EventLoop *t_loopInThisThread = nullptr;
 const int kPollTimeMs = 1000;
 
 EventLoop::EventLoop()
     : looping_(false), threadId_(std::this_thread::get_id()),
       eventmanager_(new EventManager(this)), quit_(false),
-      callingPendingFunctors_(false), asyncwaker(new AsyncWaker(this)) {
+      callingPendingFunctors_(false), asyncWaker_(new AsyncWaker(this)) {
 #ifdef USE_STD_COUT
   std::cout << "LOG_TRACE:   "
             << "EventLoop created " << this << " in thread " << threadId_
@@ -42,9 +40,9 @@ void EventLoop::loop() {
   assert(!looping_);
   assertInLoopThread();
   looping_ = true;
-  quit_ = false;
+  quit_.store(false, std::memory_order_release);
 
-  while (!quit_) {
+  while (!quit_.load(std::memory_order_acquire)) {
     activeChannels_.clear();
     // 这里poll在轮询中，为阻塞的，想要回调活动事件，必须想办法唤醒
     // muduo这里采用了一个很巧妙的办法，专门用一个文件描述符来进行唤醒
@@ -62,9 +60,9 @@ void EventLoop::loop() {
 }
 
 void EventLoop::quit() {
-  quit_ = true;
+  quit_.store(true, std::memory_order_release);
   if (!isInLoopThread()) {
-    asyncwaker->wakeup();
+    asyncWaker_->wakeup();
   }
 }
 
@@ -135,32 +133,32 @@ void EventLoop::doPendingFunctors() {
 }
 
 // !这个函数是在loop启动之前调用的，用于设置channel
-void EventLoop::runInLoop(const Functor &cb) {
+void EventLoop::runInLoop(Functor cb) {
   if (isInLoopThread()) {
     cb();
   } else {
-    queueInLoop(cb);
+    queueInLoop(std::move(cb));
   }
 }
 
 // queueInLoop 是public的，不一定要被runInLoop调用，也可以被直接调用
-void EventLoop::queueInLoop(const Functor &cb) {
+void EventLoop::queueInLoop(Functor cb) {
   {
 #ifdef USE_LOCKFREEQUEUE
     pendingFunctors_.Enqueue(cb);
 #else
 #ifdef USE_SPINLOCK
     spinlock.lock();
-    pendingFunctors_.push_back(cb);
+    pendingFunctors_.push_back(std::move(cb));
     spinlock.unlock();
 #else
     std::lock_guard<std::mutex> lock(mutex_);
-    pendingFunctors_.push_back(cb);
+    pendingFunctors_.push_back(std::move(cb));
 #endif
 #endif
   }
 
   if (!isInLoopThread() || callingPendingFunctors_) {
-    asyncwaker->wakeup();
+    asyncWaker_->wakeup();
   }
 }

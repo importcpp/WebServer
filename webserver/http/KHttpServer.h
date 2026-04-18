@@ -1,6 +1,7 @@
 #pragma once
-#include "../tcp/KTcpServer.h"
-#include "../utils/Knoncopyable.h"
+#include "KStaticFileCache.h"
+#include "webserver/tcp/KTcpServer.h"
+#include "webserver/utils/Knoncopyable.h"
 #include <sys/stat.h>
 
 namespace kback {
@@ -20,6 +21,7 @@ public:
   void setHttpCallback(const HttpCallback &cb) { httpCallback_ = cb; }
 
   void setThreadNum(int numThreads) { server_.setThreadNum(numThreads); }
+  void setStaticFileRoot(string root);
 
   void start();
 
@@ -28,9 +30,13 @@ private:
   void onMessage(const TcpConnectionPtr &conn, Buffer *buf,
                  Timestamp receiveTime);
   void onRequest(const TcpConnectionPtr &, const HttpRequest &);
+  void sendResponse(const TcpConnectionPtr &conn, const HttpResponse &response,
+                    int fileFd = -1, size_t fileSize = 0);
 
   TcpServer server_;
   HttpCallback httpCallback_;
+  string staticFileRoot_;
+  StaticFileCache staticFileCache_;
 };
 
 } // namespace kback

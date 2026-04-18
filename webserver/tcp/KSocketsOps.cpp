@@ -1,17 +1,24 @@
 #include "KSocketsOps.h"
 
-#include "../utils/KTypes.h"
+#include "webserver/utils/KTypes.h"
 
 #include <fcntl.h>
+#include <cstdlib>
 #include <iostream>
 
 #include <errno.h>
+#include <stdio.h>
 #include <unistd.h> //
 
 using namespace kback;
 
 namespace {
 typedef struct sockaddr SA;
+
+[[noreturn]] void abortSyscall(const char *syscallName) {
+  perror(syscallName);
+  std::abort();
+}
 
 // 这里是将sockaddr_in 转化为 sockaddr
 const SA *sockaddr_cast(const struct sockaddr_in *addr) {
@@ -32,6 +39,7 @@ int sockets::createNonblockingOrDie() {
     std::cout << "LOG_SYSFATAL:   "
               << "sockets::createNonblockingOrDie" << std::endl;
 #endif
+    abortSyscall("socket");
   }
   return sockfd;
 }
@@ -47,6 +55,7 @@ void sockets::bindOrDie(int sockfd, const struct sockaddr_in &addr) {
     std::cout << "LOG_SYSFATAL:   "
               << "sockets::bindOrDie" << std::endl;
 #endif
+    abortSyscall("bind");
   }
 }
 
@@ -57,6 +66,7 @@ void sockets::listenOrDie(int sockfd) {
     std::cout << "LOG_SYSFATAL:   "
               << "sockets::listenOrDie" << std::endl;
 #endif
+    abortSyscall("listen");
   }
 }
 
@@ -144,6 +154,7 @@ void sockets::fromHostPort(const char *ip, uint16_t port,
     std::cout << "LOG_SYSERR:   "
               << "sockets::fromHostPort" << std::endl;
 #endif
+    abortSyscall("inet_pton");
   }
 }
 

@@ -1,7 +1,8 @@
 #pragma once
-#include "../utils/KTimestamp.h"
-#include "../utils/Knoncopyable.h"
+#include "webserver/utils/KTimestamp.h"
+#include "webserver/utils/Knoncopyable.h"
 #include <functional>
+#include <string>
 #include <sys/epoll.h>
 
 namespace kback {
@@ -37,9 +38,12 @@ public:
     events_ |= kReadEvent;
     update();
   }
-  void enableWriting() { events_ |= kWriteEvent; }
+  void enableWriting() {
+    events_ |= kWriteEvent;
+    update();
+  }
   void disableWriting() {
-    events_ &= (-kWriteEvent);
+    events_ &= ~kWriteEvent;
     update();
   }
   void disableAll() {
@@ -61,12 +65,12 @@ public:
   void set_index(int idx) { index_ = idx; }
 
   // for debug
-  string eventsToString() const;
+  std::string eventsToString() const;
 
   EventLoop *ownerLoop() { return loop_; }
 
 private:
-  static string eventsToString(int fd, int ev);
+  static std::string eventsToString(int fd, int ev);
   void update();
 
   // 每个channel对象 共享相同的常量值，所以定义为static

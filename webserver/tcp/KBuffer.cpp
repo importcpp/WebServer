@@ -3,7 +3,7 @@
 #include "KBuffer.h"
 #include "KSocketsOps.h"
 // #include "logging/KLogging.h"
-#include "../utils/KTypes.h"
+#include "webserver/utils/KTypes.h"
 #include <errno.h>
 #include <memory.h>
 #include <sys/uio.h>
@@ -91,14 +91,17 @@ ssize_t Buffer::writeFd(int fd, int *savedErrno) {
 
   if (n > 0) {
     retrieve(n);
+  } else if (n < 0) {
+    *savedErrno = errno;
   }
-  return 0;
+  return n;
 }
 
 #ifdef USE_EPOLL_LT
 #else
 // ET 模式下处理写事件
 ssize_t Buffer::writeFdET(int fd, int *savedErrno) {
+  (void)savedErrno;
   ssize_t writesum = 0;
 
   for (;;) {

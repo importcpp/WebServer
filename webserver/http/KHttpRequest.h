@@ -1,9 +1,10 @@
 #pragma once
-#include "../utils/KTimestamp.h"
-#include "../utils/KTypes.h"
-#include "../utils/Kcopyable.h"
+#include "webserver/utils/KTimestamp.h"
+#include "webserver/utils/KTypes.h"
+#include "webserver/utils/Kcopyable.h"
 
 #include <assert.h>
+#include <cctype>
 #include <map>
 #include <stdio.h>
 
@@ -82,11 +83,13 @@ public:
   void addHeader(const char *start, const char *colon, const char *end) {
     string field(start, colon);
     ++colon;
-    while (colon < end && isspace(*colon)) {
+    while (colon < end &&
+           std::isspace(static_cast<unsigned char>(*colon)) != 0) {
       ++colon;
     }
     string value(colon, end);
-    while (!value.empty() && isspace(value[value.size() - 1])) {
+    while (!value.empty() &&
+           std::isspace(static_cast<unsigned char>(value.back())) != 0) {
       value.resize(value.size() - 1);
     }
     headers_[field] = value;

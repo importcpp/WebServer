@@ -4,3 +4,4 @@
 
 # Local benchmark build artifacts
 /webserver/benchmark_kTcpServer
+/build/

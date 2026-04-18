@@ -1,16 +1,18 @@
 #pragma once
-#include "../utils/KCallbacks.h"
-#include "../utils/KTimestamp.h"
-#include "../utils/Knoncopyable.h"
+#include "webserver/utils/KCallbacks.h"
+#include "webserver/utils/KTimestamp.h"
+#include "webserver/utils/Knoncopyable.h"
 #ifdef USE_RINGBUFFER
-#include "../tcp/KRingBuffer.h"
+#include "webserver/tcp/KRingBuffer.h"
 #else
-#include "../tcp/KBuffer.h"
+#include "webserver/tcp/KBuffer.h"
 #endif
 #include "KInetAddress.h"
-#include <boost/any.hpp>
+#include <any>
 #include <memory>
 #include <string>
+#include <string_view>
+#include <sys/types.h>
 #include <sys/sendfile.h>
 
 namespace kback {
@@ -43,6 +45,11 @@ public:
   bool connected() const { return state_ == kConnected; }
 
   void send(const std::string &message);
+  void send(std::string &&message);
+  void send(const char *message);
+  void send(std::string_view message);
+  void send(const void *data, size_t len);
+  void send(Buffer *buffer);
   // 暂时没有设计成线程安全的，因为只会在IO调用
   void sendAllOneTimeInLoop(const std::string &message);
   // void send(Buffer *buf);
@@ -50,11 +57,11 @@ public:
   void setTcpNoDelay(bool on);
 
   /// ============= Http ============ ///
-  void setContext(const boost::any &context) { context_ = context; }
+  void setContext(std::any context) { context_ = std::move(context); }
 
-  const boost::any &getContext() const { return context_; }
+  const std::any &getContext() const { return context_; }
 
-  boost::any *getMutableContext() { return &context_; }
+  std::any *getMutableContext() { return &context_; }
   /// ============= Http ============ ///
 
   void setConnectionCallback(const ConnectionCallback &cb) {
@@ -94,7 +101,10 @@ private:
   void handleWrite();
   void handleClose();
   void handleError();
-  void sendInLoop(const std::string &message);
+  void sendInLoop(std::string_view message);
+  void sendFileInLoop();
+  void maybeCompleteWrite();
+  void resetSendFileState();
 
   void shutdownInLoop();
 
@@ -114,7 +124,10 @@ private:
 
   Buffer inputBuffer_;
   Buffer outputBuffer_;
-  boost::any context_;
+  std::any context_;
+  int sendFileFd_;
+  off_t sendFileOffset_;
+  size_t sendFileRemaining_;
 };
 
 } // namespace kback

@@ -6,6 +6,7 @@
 #include <assert.h>
 #include <string.h>
 #include <string>
+#include <string_view>
 #include <vector>
 //#include <unistd.h>  // ssize_t
 
@@ -45,6 +46,30 @@ public:
 
   const char *peek() const { return buffer_ + readerIndex_; }
 
+  bool isReadableContiguous() const { return writerIndex_ >= readerIndex_; }
+
+  bool isSpanContiguous(const char *segmentEnd) const {
+    assert(segmentEnd >= begin());
+    assert(segmentEnd < this->end());
+    return segmentEnd >= peek();
+  }
+
+  std::string_view readableView() const {
+    assert(isReadableContiguous());
+    return std::string_view(peek(), writerIndex_ - readerIndex_);
+  }
+
+  std::string readableStringUntil(const char *segmentEnd) const {
+    assert(segmentEnd >= begin());
+    assert(segmentEnd < this->end());
+    if (isSpanContiguous(segmentEnd)) {
+      return std::string(peek(), static_cast<size_t>(segmentEnd - peek()));
+    }
+    std::string str(peek(), capacity_ - readerIndex_);
+    str.append(begin(), static_cast<size_t>(segmentEnd - begin()));
+    return str;
+  }
+
   const char *findCRLF() const {
     if (writerIndex_ > readerIndex_) {
       const char *crlf = std::search(peek(), beginWrite(), kCRLF, kCRLF + 2);
@@ -68,14 +93,15 @@ public:
     readerIndex_ %= capacity_;
   }
 
-  void retrieveUntil(const char *end) {
-    assert(end >= begin());
-    assert(end < end());
-    if (end >= peek()) {
-      retrieve(static_cast<size_t>(end - peek()));
+  void retrieveUntil(const char *segmentEnd) {
+    assert(segmentEnd >= begin());
+    assert(segmentEnd < this->end());
+    if (segmentEnd >= peek()) {
+      retrieve(static_cast<size_t>(segmentEnd - peek()));
       return;
     }
-    retrieve(static_cast<size_t>(end - begin()) + capacity_ - readerIndex_);
+    retrieve(static_cast<size_t>(segmentEnd - begin()) +
+             capacity_ - readerIndex_);
   }
 
   void retrieveAll() {
@@ -134,6 +160,16 @@ public:
         memcpy(buffer_, data + reserve_tail, writerIndex_);
       }
     }
+  }
+
+  void retrieveLineAndCRLF(const char *crlf) {
+    assert(crlf != nullptr);
+    if (isSpanContiguous(crlf)) {
+      retrieve(static_cast<size_t>(crlf - peek()) + 2);
+      return;
+    }
+    retrieve(static_cast<size_t>(crlf - begin()) + capacity_ - readerIndex_ +
+             2);
   }
 
   void append(const void * /*restrict*/ data, size_t len) {

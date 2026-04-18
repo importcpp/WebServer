@@ -2,11 +2,8 @@
 #include "webserver/utils/KCallbacks.h"
 #include "webserver/utils/KTimestamp.h"
 #include "webserver/utils/Knoncopyable.h"
-#ifdef USE_RINGBUFFER
-#include "webserver/tcp/KRingBuffer.h"
-#else
-#include "webserver/tcp/KBuffer.h"
-#endif
+#include "KTcpConnectionLifecycle.h"
+#include "KSelectedBuffer.h"
 #include "KInetAddress.h"
 #include <any>
 #include <memory>
@@ -88,6 +85,9 @@ public:
   void connectDestroyed();
 
 private:
+  friend class DisabledTcpConnectionLifecycle;
+  friend class EnabledTcpConnectionLifecycle;
+
   // 通过状态机来表示tcp的连接状态
   enum StateE {
     kConnecting,
@@ -105,6 +105,8 @@ private:
   void sendFileInLoop();
   void maybeCompleteWrite();
   void resetSendFileState();
+  void releaseForRecycle();
+  void enqueueForRecycle();
 
   void shutdownInLoop();
 
@@ -128,6 +130,7 @@ private:
   int sendFileFd_;
   off_t sendFileOffset_;
   size_t sendFileRemaining_;
+  TcpConnectionLifecycle recycleLifecycle_;
 };
 
 } // namespace kback

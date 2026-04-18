@@ -1,4 +1,5 @@
 #pragma once
+#include "webserver/utils/KBuildConfig.h"
 #include "webserver/utils/KTimestamp.h"
 #include "webserver/utils/Knoncopyable.h"
 #include <functional>
@@ -51,13 +52,12 @@ public:
     update();
   }
 
-#ifdef USE_EPOLL_LT
-#else
   void enableEpollET() {
-    events_ |= EPOLLET;
-    update();
+    if constexpr (!kUseEpollLT) {
+      events_ |= EPOLLET;
+      update();
+    }
   }
-#endif
 
   bool isWriting() const { return events_ & kWriteEvent; }
   // for poller

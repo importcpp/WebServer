@@ -4,9 +4,9 @@
 #include "KHttpRequest.h"
 #include "KHttpResponse.h"
 #include "webserver/utils/KCallbacks.h"
+#include "webserver/utils/KAsyncLogger.h"
 
 #include <any>
-#include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -74,11 +74,8 @@ void HttpServer::setStaticFileRoot(string root) {
 }
 
 void HttpServer::start() {
-#ifdef USE_STD_COUT
-  std::cout << "LOG_WARN:   "
-            << "HttpServer[" << server_.name() << "] starts listenning on "
-            << server_.ipPort() << std::endl;
-#endif
+  KBACK_LOG_WARN("HttpServer[%s] starts listenning on %s",
+                 server_.name().c_str(), server_.ipPort().c_str());
   // 启动TcpServer, 开始监听端口
   server_.start();
 }

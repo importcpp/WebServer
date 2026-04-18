@@ -1,6 +1,7 @@
 #include "KAcceptor.h"
 
 #include "webserver/loop/KEventLoop.h"
+#include "KTcpIoMode.h"
 #include "KInetAddress.h"
 #include "KSocketsOps.h"
 
@@ -55,8 +56,8 @@ void Acceptor::handleRead() {
     } else {
       break;
     }
-#ifdef USE_EPOLL_LT
-    break;
-#endif
+    if (tcp_io_mode::acceptOneConnectionPerEvent()) {
+      break;
+    }
   }
 }

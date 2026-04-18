@@ -37,7 +37,11 @@ make runHttpServer MODE=release
 - `USE_SPINLOCK=1`
 - `USE_RECYCLE=1`
 - `USE_EPOLL_LT=1`
-- `USE_STDOUT_LOGGING=1`
+- `USE_ASYNC_FILE_LOGGING=1`
+- `USE_STDOUT_LOGGING=1`（兼容旧开关，等价于 `USE_ASYNC_FILE_LOGGING=1`）
+
+启用异步日志后，业务线程只负责格式化并入队，后台线程异步追加到日志文件。
+默认输出到当前目录下的 `webserver.log`，也可以通过环境变量 `WEBSERVER_LOG_FILE=/path/to/file.log` 指定路径。
 
 ## Technical points
 

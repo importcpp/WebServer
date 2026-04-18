@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <string>
+#include <string_view>
 #include <vector>
 
 #include <assert.h>
@@ -38,6 +39,25 @@ public:
 
   const char *peek() const { return begin() + readerIndex_; }
 
+  bool isReadableContiguous() const { return true; }
+
+  bool isSpanContiguous(const char *segmentEnd) const {
+    assert(peek() <= segmentEnd);
+    assert(segmentEnd <= beginWrite());
+    (void)segmentEnd;
+    return true;
+  }
+
+  std::string_view readableView() const {
+    return std::string_view(peek(), readableBytes());
+  }
+
+  std::string readableStringUntil(const char *end) const {
+    assert(peek() <= end);
+    assert(end <= beginWrite());
+    return std::string(peek(), static_cast<size_t>(end - peek()));
+  }
+
   const char *findCRLF() const {
     const char *crlf = std::search(peek(), beginWrite(), kCRLF, kCRLF + 2);
     return crlf == beginWrite() ? NULL : crlf;
@@ -52,6 +72,11 @@ public:
     assert(peek() <= end);
     assert(end <= beginWrite());
     retrieve(end - peek());
+  }
+
+  void retrieveLineAndCRLF(const char *crlf) {
+    assert(crlf != nullptr);
+    retrieveUntil(crlf + 2);
   }
 
   void retrieveAll() {

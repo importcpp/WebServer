@@ -2,6 +2,7 @@
 #include "KAsyncWaker.h"
 #include "webserver/poller/KChannel.h"
 #include "webserver/poller/KEventManager.h"
+#include "webserver/utils/KAsyncLogger.h"
 
 using namespace kback;
 
@@ -15,17 +16,12 @@ EventLoop::EventLoop()
     : looping_(false), threadId_(std::this_thread::get_id()),
       eventmanager_(new EventManager(this)), quit_(false),
       callingPendingFunctors_(false), asyncWaker_(new AsyncWaker(this)) {
-#ifdef USE_STD_COUT
-  std::cout << "LOG_TRACE:   "
-            << "EventLoop created " << this << " in thread " << threadId_
-            << std::endl;
-#endif
+  KBACK_LOG_TRACE("EventLoop created %p in thread %zu", this,
+                  std::hash<std::thread::id>{}(threadId_));
   if (t_loopInThisThread) {
-#ifdef USE_STD_COUT
-    std::cout << "LOG_FATAL:   "
-              << "Another EventLoop " << t_loopInThisThread
-              << " exists in this thread " << threadId_ << std::endl;
-#endif
+    KBACK_LOG_FATAL("Another EventLoop %p exists in thread %zu",
+                    t_loopInThisThread,
+                    std::hash<std::thread::id>{}(threadId_));
   } else {
     t_loopInThisThread = this;
   }
@@ -52,10 +48,7 @@ void EventLoop::loop() {
     }
     doPendingFunctors();
   }
-#ifdef USE_STD_COUT
-  std::cout << "LOG_TRACE:   "
-            << "EventLoop " << this << " stop looping" << std::endl;
-#endif
+  KBACK_LOG_TRACE("EventLoop %p stop looping", this);
   looping_ = false;
 }
 
@@ -83,52 +76,22 @@ void EventLoop::removeChannel(Channel *channel) {
 }
 
 void EventLoop::abortNotInLoopThread() {
-#ifdef USE_STD_COUT
-  std::cerr << "LOG_FATAL:   "
-            << "EventLoop::abortNotInLoopThread - EventLoop " << this
-            << " was created in threadId_ = " << threadId_
-            << ", current thread id = " << std::this_thread::get_id()
-            << std::endl;
-#endif
+  KBACK_LOG_FATAL(
+      "EventLoop::abortNotInLoopThread - EventLoop %p was created in "
+      "threadId_=%zu, current thread id=%zu",
+      this, std::hash<std::thread::id>{}(threadId_),
+      std::hash<std::thread::id>{}(std::this_thread::get_id()));
   std::abort();
 }
 
 // 执行装载的的回调函数，下面的处理方法很巧妙
 void EventLoop::doPendingFunctors() {
-
-#ifdef USE_LOCKFREEQUEUE
   callingPendingFunctors_ = true;
-  // 遍历执行回调函数
-  for (;;) {
-    Functor functor;
-    bool flag = pendingFunctors_.Try_Dequeue(functor);
-    if (flag) {
-      if (functor != nullptr) {
-        functor();
-      }
-    } else {
-      break;
-    }
-  }
-#else
-  {
-    std::vector<Functor> functors;
-    callingPendingFunctors_ = true;
-#ifdef USE_SPINLOCK
-    spinlock.lock();
-    functors.swap(pendingFunctors_);
-    spinlock.unlock();
-#else
-    std::lock_guard<std::mutex> lock(mutex_);
-    functors.swap(pendingFunctors_);
-#endif
-    // 遍历执行回调函数
-    for (auto &functor : functors) {
+  pendingFunctors_.consumeAll([](Functor &functor) {
+    if (functor != nullptr) {
       functor();
     }
-  }
-#endif
-
+  });
   callingPendingFunctors_ = false;
 }
 
@@ -143,20 +106,7 @@ void EventLoop::runInLoop(Functor cb) {
 
 // queueInLoop 是public的，不一定要被runInLoop调用，也可以被直接调用
 void EventLoop::queueInLoop(Functor cb) {
-  {
-#ifdef USE_LOCKFREEQUEUE
-    pendingFunctors_.Enqueue(cb);
-#else
-#ifdef USE_SPINLOCK
-    spinlock.lock();
-    pendingFunctors_.push_back(std::move(cb));
-    spinlock.unlock();
-#else
-    std::lock_guard<std::mutex> lock(mutex_);
-    pendingFunctors_.push_back(std::move(cb));
-#endif
-#endif
-  }
+  pendingFunctors_.push(std::move(cb));
 
   if (!isInLoopThread() || callingPendingFunctors_) {
     asyncWaker_->wakeup();

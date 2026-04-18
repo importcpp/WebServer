@@ -2,6 +2,7 @@
 #include "KRingBuffer.h"
 #include "KSocketsOps.h"
 // #include "logging/KLogging.h"
+#include "webserver/utils/KAsyncLogger.h"
 #include "webserver/utils/KTypes.h"
 #include <errno.h>
 #include <memory.h>
@@ -12,7 +13,6 @@ using namespace kback;
 
 const char Buffer::kCRLF[] = "\r\n"; // 回车换行
 
-#ifdef USE_EPOLL_LT
 // 通过readv 减少一次系统调用，避免该线程在系统调用上占用太多时间。
 // 这两块存储区分别是临时的栈存储区和buffer的可写区。
 // 如果可写空间能够完全接收数据(即n<=writable)，就无需后续操作了。
@@ -52,8 +52,6 @@ ssize_t Buffer::readFd(int fd, int *savedErrno) {
   }
   return n;
 }
-
-#else
 // 支持ET模式下缓冲区的数据读取
 ssize_t Buffer::readFdET(int fd, int *savedErrno) {
   char extrabuf[65536];
@@ -104,7 +102,6 @@ ssize_t Buffer::readFdET(int fd, int *savedErrno) {
   }
   return readLen;
 }
-#endif
 
 ssize_t Buffer::writeFd(int fd, int *savedErrno) {
   // 从可读位置开始读取
@@ -130,8 +127,6 @@ ssize_t Buffer::writeFd(int fd, int *savedErrno) {
   return n;
 }
 
-#ifdef USE_EPOLL_LT
-#else
 // ET 模式下处理写事件
 ssize_t Buffer::writeFdET(int fd, int *savedErrno) {
   (void)savedErrno;
@@ -161,9 +156,7 @@ ssize_t Buffer::writeFdET(int fd, int *savedErrno) {
     } else if (n < 0) {
       if (errno == EAGAIN) //系统缓冲区满，非阻塞返回
       {
-#ifdef USE_STD_COUT
-        std::cout << "ET mode: errno == EAGAIN" << std::endl;
-#endif
+        KBACK_LOG_TRACE("ET mode: errno == EAGAIN");
         break;
       }
       // 暂未考虑其他错误
@@ -177,5 +170,4 @@ ssize_t Buffer::writeFdET(int fd, int *savedErrno) {
   }
   return writesum;
 }
-#endif
 #endif

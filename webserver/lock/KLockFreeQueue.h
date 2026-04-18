@@ -2,6 +2,7 @@
 #include "webserver/utils/Knoncopyable.h"
 #include <atomic>
 #include <memory>
+#include <utility>
 #include <vector>
 
 // 自己造轮子
@@ -18,6 +19,7 @@ private:
     Node() : data_(), next_(nullptr) {}
     Node(T &data) : data_(data), next_(nullptr) {}
     Node(const T &data) : data_(data), next_(nullptr) {}
+    Node(T &&data) : data_(std::move(data)), next_(nullptr) {}
   };
 
 private:
@@ -114,6 +116,31 @@ public:
       }
     }
     // 重置尾节点, (也有可能已经被别的线程重置，那么当前线程就不用管了
+    ::__sync_bool_compare_and_swap(&tail_, old_tail, enqueue_node);
+  }
+
+  void Enqueue(T &&data) {
+    Node *enqueue_node = new Node(std::move(data));
+    Node *old_tail, *old_tail_next;
+
+    for (;;) {
+      old_tail = tail_;
+      old_tail_next = old_tail->next_;
+
+      if (old_tail != tail_) {
+        continue;
+      }
+
+      if (old_tail_next == nullptr) {
+        if (::__sync_bool_compare_and_swap(&(old_tail->next_), old_tail_next,
+                                           enqueue_node)) {
+          break;
+        }
+      } else {
+        ::__sync_bool_compare_and_swap(&(tail_), old_tail, old_tail_next);
+        continue;
+      }
+    }
     ::__sync_bool_compare_and_swap(&tail_, old_tail, enqueue_node);
   }
 };

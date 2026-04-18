@@ -1,9 +1,5 @@
 #include "KHttpResponse.h"
-#ifdef USE_RINGBUFFER
-#include "webserver/tcp/KRingBuffer.h"
-#else
-#include "webserver/tcp/KBuffer.h"
-#endif
+#include "webserver/tcp/KSelectedBuffer.h"
 #include <stdio.h>
 
 using namespace kback;

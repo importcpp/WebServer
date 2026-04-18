@@ -3,22 +3,14 @@
 #include <assert.h>
 #include <atomic>
 #include <functional>
-#include <iostream>
 #include <memory>
 #include <mutex>
 #include <thread>
 #include <vector>
 
+#include "webserver/loop/KPendingFunctorQueue.h"
 #include "webserver/utils/KTimestamp.h"
 #include "webserver/utils/Knoncopyable.h"
-
-#ifdef USE_LOCKFREEQUEUE
-#include "webserver/lock/KLockFreeQueue.h"
-#endif
-
-#ifdef USE_SPINLOCK
-#include "webserver/lock/KSpinLock.h"
-#endif
 
 namespace kback {
 
@@ -79,17 +71,6 @@ private:
   bool callingPendingFunctors_;
 
   std::unique_ptr<AsyncWaker> asyncWaker_;
-
-#ifdef USE_LOCKFREEQUEUE
-  LockFreeQueue<Functor> pendingFunctors_;
-#else
-// 锁类型的选择
-#ifdef USE_SPINLOCK
-  SpinLock spinlock;
-#else
-  std::mutex mutex_;
-#endif
-  std::vector<Functor> pendingFunctors_;
-#endif
+  PendingFunctorQueue<Functor> pendingFunctors_;
 };
 } // namespace kback

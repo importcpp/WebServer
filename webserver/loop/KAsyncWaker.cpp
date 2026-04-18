@@ -1,6 +1,7 @@
 #include "KAsyncWaker.h"
 #include "KEventLoop.h"
 #include "webserver/poller/KChannel.h"
+#include "webserver/utils/KAsyncLogger.h"
 
 #include <errno.h>
 #include <unistd.h>
@@ -11,10 +12,7 @@ AsyncWaker::AsyncWaker(EventLoop *loop)
     : wakerfd_(::eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC)), loop_(loop),
       wakerchannel_(std::make_unique<Channel>(loop, wakerfd_)) {
   if (wakerfd_ < 0) {
-#ifdef USE_STD_COUT
-    std::cout << "LOG_SYSERR:   "
-              << "Failed in eventfd" << std::endl;
-#endif
+    KBACK_LOG_SYSERR("Failed in eventfd");
     abort();
   }
 
@@ -35,11 +33,8 @@ void AsyncWaker::handleRead() {
   ssize_t n = ::read(wakerfd_, &one, sizeof one);
   // 判断读取的字节是不是 one对应的字节数
   if (n != sizeof one) {
-#ifdef USE_STD_COUT
-    std::cout << "LOG_ERROR:   "
-              << "AsyncWaker::handleRead() reads " << n
-              << " bytes instead of 8";
-#endif
+    KBACK_LOG_ERROR("AsyncWaker::handleRead() reads %zd bytes instead of 8",
+                    n);
   }
 }
 
@@ -48,10 +43,6 @@ void AsyncWaker::wakeup() {
   ssize_t n = ::write(wakerfd_, &one, sizeof one);
   // 判断写入的字节是不是 one对应的字节数
   if (n != sizeof one && errno != EAGAIN) {
-#ifdef USE_STD_COUT
-    std::cout << "LOG_ERROR:   "
-              << "AsyncWaker::wakeup() writes " << n << " bytes instead of 8"
-              << std::endl;
-#endif
+    KBACK_LOG_ERROR("AsyncWaker::wakeup() writes %zd bytes instead of 8", n);
   }
 }

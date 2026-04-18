@@ -1,8 +1,8 @@
 #include "KChannel.h"
 #include "webserver/loop/KEventLoop.h"
 
+#include "webserver/utils/KAsyncLogger.h"
 #include "webserver/utils/KTypes.h"
-#include <iostream>
 #include <poll.h>
 #include <sstream>
 
@@ -29,16 +29,10 @@ void Channel::handleEvent(Timestamp receiveTime) {
   eventHandling_ = true;
   if (revents_ & POLLNVAL) // invalid polling request
   {
-#ifdef USE_STD_COUT
-    std::cout << "LOG_WARN:   "
-              << "Channel::handle_event() POLLNVAL" << std::endl;
-#endif
+    KBACK_LOG_WARN("Channel::handle_event() POLLNVAL");
   }
   if ((revents_ & POLLHUP) && !(revents_ & POLLIN)) {
-#ifdef USE_STD_COUT
-    std::cout << "LOG_WARN:   "
-              << "Channel::handle_event() POLLHUP" << std::endl;
-#endif
+    KBACK_LOG_WARN("Channel::handle_event() POLLHUP");
     if (closeCallback_)
       closeCallback_();
   }

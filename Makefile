@@ -9,7 +9,12 @@ USE_RINGBUFFER ?= 0
 USE_LOCKFREEQUEUE ?= 0
 USE_SPINLOCK ?= 0
 USE_RECYCLE ?= 0
+USE_ASYNC_FILE_LOGGING ?= 0
 USE_STDOUT_LOGGING ?= 0
+
+ifeq ($(filter 1,$(USE_STDOUT_LOGGING)),1)
+  USE_ASYNC_FILE_LOGGING := 1
+endif
 
 OBJ_DIR := $(BUILD_DIR)/obj
 LIB_DIR := $(BUILD_DIR)/lib
@@ -22,7 +27,7 @@ CPPFLAGS += $(if $(filter 1,$(USE_RINGBUFFER)),-DUSE_RINGBUFFER,)
 CPPFLAGS += $(if $(filter 1,$(USE_LOCKFREEQUEUE)),-DUSE_LOCKFREEQUEUE,)
 CPPFLAGS += $(if $(filter 1,$(USE_SPINLOCK)),-DUSE_SPINLOCK,)
 CPPFLAGS += $(if $(filter 1,$(USE_RECYCLE)),-DUSE_RECYCLE,)
-CPPFLAGS += $(if $(filter 1,$(USE_STDOUT_LOGGING)),-DUSE_STD_COUT,)
+CPPFLAGS += $(if $(filter 1,$(USE_ASYNC_FILE_LOGGING)),-DUSE_ASYNC_FILE_LOGGING,)
 
 ifeq ($(MODE),debug)
   CXXFLAGS += $(COMMON_CXXFLAGS) -O0 -g3
@@ -51,6 +56,7 @@ CORE_SRCS := \
 	webserver/tcp/KTcpServer.cpp \
 	webserver/thread/KThreadPool.cpp \
 	webserver/timer/KTimer.cpp \
+	webserver/utils/KAsyncLogger.cpp \
 	webserver/utils/KTimestamp.cpp
 
 HTTP_SRCS := \
@@ -92,6 +98,7 @@ print-config:
 	@printf 'USE_LOCKFREEQUEUE=%s\n' "$(USE_LOCKFREEQUEUE)"
 	@printf 'USE_SPINLOCK=%s\n' "$(USE_SPINLOCK)"
 	@printf 'USE_RECYCLE=%s\n' "$(USE_RECYCLE)"
+	@printf 'USE_ASYNC_FILE_LOGGING=%s\n' "$(USE_ASYNC_FILE_LOGGING)"
 	@printf 'USE_STDOUT_LOGGING=%s\n' "$(USE_STDOUT_LOGGING)"
 
 runHttpServer: $(RUN_HTTP_SERVER_BIN)

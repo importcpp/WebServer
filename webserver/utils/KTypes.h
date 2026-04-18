@@ -4,7 +4,8 @@
 
 // 主要用于类型转换
 
-#include <iostream>
+#include <cstdio>
+#include <cstdlib>
 #include <stdint.h>
 #include <string.h> // memset
 #include <string>
@@ -20,8 +21,8 @@ namespace kback {
 
 template <typename T> T *CheckNotNull(T *ptr) {
   if (ptr == NULL) {
-    std::cerr << "Must be NULL" << std::endl;
-    abort();
+    std::fputs("CheckNotNull failed: pointer must not be NULL\n", stderr);
+    std::abort();
   }
   return ptr;
 }

@@ -1,4 +1,5 @@
 #include "KThreadPool.h"
+#include "webserver/utils/KAsyncLogger.h"
 #include <assert.h>
 
 ThreadPool::ThreadPool(const std::string &name)
@@ -63,12 +64,12 @@ void ThreadPool::runInThread() {
       }
     }
   } catch (const std::exception &ex) {
-    std::cerr << "exception caught in ThreadPool " << name_ << std::endl;
-    std::cerr << "reason: " << ex.what() << std::endl;
+    KBACK_LOG_ERROR("exception caught in ThreadPool %s", name_.c_str());
+    KBACK_LOG_ERROR("reason: %s", ex.what());
     std::abort();
   } catch (...) {
-    std::cerr << "unknown exception caught in ThreadPool " << name_
-              << std::endl;
+    KBACK_LOG_ERROR("unknown exception caught in ThreadPool %s",
+                    name_.c_str());
     abort();
   }
 }

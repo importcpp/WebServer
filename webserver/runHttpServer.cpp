@@ -2,7 +2,6 @@
 #include "webserver/http/KHttpResponse.h"
 #include "webserver/http/KHttpServer.h"
 #include "webserver/loop/KEventLoop.h"
-#include <iostream>
 #include <map>
 
 using namespace kback;

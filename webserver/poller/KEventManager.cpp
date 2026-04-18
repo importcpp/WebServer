@@ -1,9 +1,9 @@
 #include "KEventManager.h"
 #include "KChannel.h"
+#include "webserver/utils/KAsyncLogger.h"
 #include <assert.h>
 #include <cstdlib>
 #include <errno.h>
-#include <iostream>
 #include <poll.h>
 #include <sys/epoll.h>
 #include <unistd.h>
@@ -20,10 +20,7 @@ EventManager::EventManager(EventLoop *loop)
     : ownerLoop_(loop), epollfd_(::epoll_create1(EPOLL_CLOEXEC)),
       events_(kInitEventListSize) {
   if (epollfd_ < 0) {
-#ifdef USE_STD_COUT
-    std::cout << "LOG_SYSFATAL:   "
-              << "EventManager::EventManager" << std::endl;
-#endif
+    KBACK_LOG_SYSFATAL("EventManager::EventManager");
     std::abort();
   }
 }
@@ -31,35 +28,23 @@ EventManager::EventManager(EventLoop *loop)
 EventManager::~EventManager() { ::close(epollfd_); }
 
 Timestamp EventManager::poll(int timeoutMs, ChannelList *activeChannels) {
-#ifdef USE_STD_COUT
-  std::cout << "LOG_TRACE:   "
-            << "fd total count " << channels_.size() << std::endl;
-#endif
+  KBACK_LOG_TRACE("fd total count %zu", channels_.size());
   int numEvents = ::epoll_wait(epollfd_, &*events_.begin(),
                                static_cast<int>(events_.size()), timeoutMs);
   int savedErrno = errno;
   Timestamp now(Timestamp::now());
   if (numEvents > 0) {
-#ifdef USE_STD_COUT
-    std::cout << "LOG_TRACE:   " << numEvents << " events happended"
-              << std::endl;
-#endif
+    KBACK_LOG_TRACE("%d events happended", numEvents);
     fillActiveChannels(numEvents, activeChannels);
     if (implicit_cast<size_t>(numEvents) == events_.size()) {
       events_.resize(events_.size() * 2);
     }
   } else if (numEvents == 0) {
-#ifdef USE_STD_COUT
-    std::cout << "LOG_TRACE:   "
-              << " nothing happended" << std::endl;
-#endif
+    KBACK_LOG_TRACE("nothing happended");
   } else {
     if (savedErrno != EINTR) {
       errno = savedErrno;
-#ifdef USE_STD_COUT
-      std::cout << "LOG_SYSERR:   "
-                << "EventManager::poll()" << std::endl;
-#endif
+      KBACK_LOG_SYSERR("EventManager::poll()");
     }
   }
   return now;
@@ -80,11 +65,8 @@ void EventManager::fillActiveChannels(int numEvents,
 void EventManager::updateChannel(Channel *channel) {
   assertInLoopThread();
   const int index = channel->index();
-#ifdef USE_STD_COUT
-  std::cout << "LOG_TRACE:   "
-            << "fd = " << channel->fd() << " events = " << channel->events()
-            << " index = " << index << std::endl;
-#endif
+  KBACK_LOG_TRACE("fd=%d events=%d index=%d", channel->fd(), channel->events(),
+                  index);
   if (index == kNew || index == kDeleted) {
     // 使用EPOLL_CTL_ADD添加新的fd
     int fd = channel->fd();
@@ -118,10 +100,7 @@ void EventManager::updateChannel(Channel *channel) {
 void EventManager::removeChannel(Channel *channel) {
   assertInLoopThread();
   int fd = channel->fd();
-#ifdef USE_STD_COUT
-  std::cout << "LOG_TRACE:   "
-            << "fd = " << fd << std::endl;
-#endif
+  KBACK_LOG_TRACE("fd=%d", fd);
   assert(channels_.find(fd) != channels_.end());
   assert(channels_[fd] == channel);
   assert(channel->isNoneEvent());
@@ -143,25 +122,16 @@ void EventManager::update(int operation, Channel *channel) {
   event.events = channel->events();
   event.data.ptr = channel;
   int fd = channel->fd();
-#ifdef USE_STD_COUT
-  std::cout << "LOG_TRACE:   "
-            << "epoll_ctl op = " << operationToString(operation)
-            << " fd = " << fd << " event = { " << channel->eventsToString()
-            << " }" << std::endl;
-#endif
+  KBACK_LOG_TRACE("epoll_ctl op=%s fd=%d event={ %s }",
+                  operationToString(operation), fd,
+                  channel->eventsToString().c_str());
   if (::epoll_ctl(epollfd_, operation, fd, &event) < 0) {
     if (operation == EPOLL_CTL_DEL) {
-#ifdef USE_STD_COUT
-      std::cout << "LOG_SYSERR"
-                << "epoll_ctl op =" << operationToString(operation)
-                << " fd =" << fd << std::endl;
-#endif
+      KBACK_LOG_SYSERR("epoll_ctl op=%s fd=%d", operationToString(operation),
+                       fd);
     } else {
-#ifdef USE_STD_COUT
-      std::cout << "LOG_SYSFATAL"
-                << "epoll_ctl op =" << operationToString(operation)
-                << " fd =" << fd;
-#endif
+      KBACK_LOG_SYSFATAL("epoll_ctl op=%s fd=%d",
+                         operationToString(operation), fd);
     }
   }
 }

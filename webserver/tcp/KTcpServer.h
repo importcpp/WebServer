@@ -1,6 +1,6 @@
 #pragma once
 
-#include "webserver/lock/KSpinLock.h"
+#include "KTcpConnectionRecycler.h"
 #include "webserver/utils/KCallbacks.h"
 #include "webserver/utils/Knoncopyable.h"
 #include "KInetAddress.h"
@@ -45,21 +45,10 @@ public:
     writeCompleteCallback_ = cb;
   }
 
-#ifdef USE_RECYCLE
-  // recycle 函数
-  void recycleCallback(TcpConnectionPtr conn) {
-    if (oddEven == false) {
-      oddEven = true;
-      return;
-    }
-    oddEven = false;
-    spinlock.lock();
-    backup_conn_.push_back(conn);
-    spinlock.unlock();
-  }
-#endif
-
 private:
+  void configureConnection(const TcpConnectionPtr &conn);
+  void recycleConnection(TcpConnectionPtr conn);
+
   // 服务器对新连接的连接处理函数
   void newConnection(int sockfd, const InetAddress &peerAddr);
 
@@ -79,13 +68,9 @@ private:
   WriteCompleteCallback writeCompleteCallback_;
   bool started_;
   int nextConnId_;
-  bool oddEven = false;
+  TcpConnectionRecycler<TcpConnectionPtr> connectionRecycler_;
   // tcp连接字典
   ConnectionMap connections_;
-#ifdef USE_RECYCLE
-  SpinLock spinlock;
-  std::vector<TcpConnectionPtr> backup_conn_;
-#endif
   std::unique_ptr<EventLoopThreadPool> threadPool_;
 };
 

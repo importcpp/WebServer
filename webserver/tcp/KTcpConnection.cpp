@@ -2,7 +2,9 @@
 
 #include "webserver/loop/KEventLoop.h"
 #include "webserver/poller/KChannel.h"
+#include "webserver/utils/KAsyncLogger.h"
 #include "webserver/utils/KTypes.h"
+#include "KTcpIoMode.h"
 #include "KSocket.h"
 #include "KSocketsOps.h"
 
@@ -12,7 +14,16 @@
 
 using namespace kback;
 
-ssize_t writeET(int fd, const char *begin, size_t len);
+void DisabledTcpConnectionLifecycle::afterConnectDestroyed(
+    TcpConnection &connection) const {
+  (void)connection;
+}
+
+void EnabledTcpConnectionLifecycle::afterConnectDestroyed(
+    TcpConnection &connection) const {
+  connection.releaseForRecycle();
+  connection.enqueueForRecycle();
+}
 
 TcpConnection::TcpConnection(EventLoop *loop, const std::string &nameArg,
                              int sockfd, const InetAddress &localAddr,
@@ -22,12 +33,8 @@ TcpConnection::TcpConnection(EventLoop *loop, const std::string &nameArg,
       channel_(new Channel(loop, sockfd)),
       localAddr_(localAddr), peerAddr_(peerAddr), sendFileFd_(-1),
       sendFileOffset_(0), sendFileRemaining_(0) {
-#ifdef USE_STD_COUT
-
-  std::cout << "LOG_DEBUG:   "
-            << "TcpConnection::ctor[" << name_ << "] at " << this
-            << " fd=" << sockfd << std::endl;
-#endif
+  KBACK_LOG_DEBUG("TcpConnection::ctor[%s] at %p fd=%d", name_.c_str(), this,
+                  sockfd);
   channel_->setReadCallback(
       [this](Timestamp receiveTime) { handleRead(receiveTime); });
   channel_->setWriteCallback([this] { handleWrite(); });
@@ -39,11 +46,8 @@ TcpConnection::~TcpConnection() {
   if (sendFileFd_ >= 0) {
     ::close(sendFileFd_);
   }
-#ifdef USE_STD_COUT
-  std::cout << "LOG_DEBUG:   "
-            << "TcpConnection::dtor[" << name_ << "] at " << this
-            << " fd=" << channel_->fd() << std::endl;
-#endif
+  KBACK_LOG_DEBUG("TcpConnection::dtor[%s] at %p fd=%d", name_.c_str(), this,
+                  channel_->fd());
 }
 
 void TcpConnection::setNewTcpConnection(EventLoop *loop,
@@ -61,11 +65,8 @@ void TcpConnection::setNewTcpConnection(EventLoop *loop,
   outputBuffer_.retrieveAll();
   resetSendFileState();
 
-#ifdef USE_STD_COUT
-  std::cout << "LOG_DEBUG:   "
-            << "TcpConnection::ctor[" << name_ << "] at " << this
-            << " fd=" << sockfd << std::endl;
-#endif
+  KBACK_LOG_DEBUG("TcpConnection::ctor[%s] at %p fd=%d", name_.c_str(), this,
+                  sockfd);
 
   channel_->setReadCallback(
       [this](Timestamp receiveTime) { handleRead(receiveTime); });
@@ -133,22 +134,14 @@ void TcpConnection::send(Buffer *buffer) {
     return;
   }
 
-#ifdef USE_RINGBUFFER
-  std::string ringPayload = buffer->bufferToString();
-  buffer->retrieve(readable);
-  send(std::move(ringPayload));
-  return;
-#endif
-
-  if (loop_->isInLoopThread()) {
-    sendInLoop(std::string_view(buffer->peek(), readable));
-    buffer->retrieve(readable);
+  if (loop_->isInLoopThread() && buffer->isReadableContiguous()) {
+    const std::string_view payload = buffer->readableView();
+    sendInLoop(payload);
+    buffer->retrieve(payload.size());
     return;
   }
 
-  std::string payload(buffer->peek(), readable);
-  buffer->retrieve(readable);
-  send(payload);
+  send(buffer->retrieveAsString());
 }
 
 // sendInLoop() 会先尝试直接发送数据，如果一次发送完毕，就不会启用writeCallback
@@ -162,11 +155,7 @@ void TcpConnection::sendInLoop(std::string_view message) {
   size_t remaining = message.size();
   // 先考虑outputbuffer里面是否含有缓冲，没有的话，那么可以直接写进输出buffer
   if (!channel_->isWriting() && outputBuffer_.readableBytes() == 0) {
-#ifdef USE_EPOLL_LT
-    nwrote = ::write(channel_->fd(), message.data(), message.size());
-#else
-    nwrote = writeET(channel_->fd(), message.data(), message.size());
-#endif
+    nwrote = tcp_io_mode::writeDirect(channel_->fd(), message);
     if (nwrote >= 0) {
       remaining -= static_cast<size_t>(nwrote);
       if (remaining == 0 && writeCompleteCallback_) {
@@ -178,10 +167,7 @@ void TcpConnection::sendInLoop(std::string_view message) {
     } else {
       nwrote = 0;
       if (errno != EWOULDBLOCK) {
-#ifdef USE_STD_COUT
-        std::cout << "LOG_SYSERR:  "
-                  << "TcpConnection::sendInLoop" << std::endl;
-#endif
+        KBACK_LOG_SYSERR("TcpConnection::sendInLoop");
       }
     }
   }
@@ -230,11 +216,7 @@ void TcpConnection::connectEstablished() {
   assert(state_ == kConnecting);
   setState(kConnected);
   socket_->setKeepAlive(true);
-#ifdef USE_EPOLL_LT
-#else
-  // 开启ET模式 -- (这两步顺序不能错)
   channel_->enableEpollET();
-#endif
   channel_->enableReading();
   connectionCallback_(shared_from_this());
 }
@@ -250,33 +232,31 @@ void TcpConnection::connectDestroyed() {
 
   // 移除poller对channel_指针的管理
   loop_->removeChannel(get_pointer(channel_));
-#ifdef USE_RECYCLE
-  // 文件描述符需要析构
+  recycleLifecycle_.afterConnectDestroyed(*this);
+}
+
+void TcpConnection::releaseForRecycle() {
   socket_.reset();
   channel_.reset();
   context_.reset();
-  recycleCallback_(shared_from_this());
-#endif
+}
+
+void TcpConnection::enqueueForRecycle() {
+  if (recycleCallback_) {
+    recycleCallback_(shared_from_this());
+  }
 }
 
 void TcpConnection::handleRead(Timestamp receiveTime) {
   int savedErrno = 0;
-#ifdef USE_EPOLL_LT
-  ssize_t n = inputBuffer_.readFd(channel_->fd(), &savedErrno);
-#else
-  // ET模式读写，直到发生EAGAIN，才返回
-  ssize_t n = inputBuffer_.readFdET(channel_->fd(), &savedErrno);
-#endif
+  ssize_t n = tcp_io_mode::read(inputBuffer_, channel_->fd(), &savedErrno);
   if (n > 0) {
     messageCallback_(shared_from_this(), &inputBuffer_, receiveTime);
   } else if (n == 0) {
     handleClose();
   } else {
     errno = savedErrno;
-#ifdef USE_STD_COUT
-    std::cout << "LOG_SYSERR:   "
-              << "TcpConnection::handleRead" << std::endl;
-#endif
+    KBACK_LOG_SYSERR("TcpConnection::handleRead");
     handleError();
   }
 }
@@ -286,18 +266,11 @@ void TcpConnection::handleWrite() {
   if (channel_->isWriting()) {
     if (outputBuffer_.readableBytes() > 0) {
       int savedErrno = 0;
-#ifdef USE_EPOLL_LT
-      ssize_t n = outputBuffer_.writeFd(channel_->fd(), &savedErrno);
-#else
-      // ET模式读写，直到发生EAGAIN，才返回
-      ssize_t n = outputBuffer_.writeFdET(channel_->fd(), &savedErrno);
-#endif
+      ssize_t n =
+          tcp_io_mode::write(outputBuffer_, channel_->fd(), &savedErrno);
       if (n < 0 && savedErrno != EAGAIN && savedErrno != EWOULDBLOCK) {
-#ifdef USE_STD_COUT
-        std::cout << "LOG_SYSERR:   "
-                  << "TcpConnection::handleWrite" << std::endl;
-#endif
         errno = savedErrno;
+        KBACK_LOG_SYSERR("TcpConnection::handleWrite");
         handleError();
         return;
       }
@@ -311,10 +284,7 @@ void TcpConnection::handleWrite() {
       maybeCompleteWrite();
     }
   } else {
-#ifdef USE_STD_COUT
-    std::cout << "LOG_TRACE:   "
-              << "Connection is down, no more writing" << std::endl;
-#endif
+    KBACK_LOG_TRACE("Connection is down, no more writing");
   }
 }
 
@@ -325,10 +295,8 @@ void TcpConnection::handleWrite() {
 //    2.2 再掉用自身的
 void TcpConnection::handleClose() {
   loop_->assertInLoopThread();
-#ifdef USE_STD_COUT
-  std::cout << "LOG_TRACE:   "
-            << "TcpConnection::handleClose state = " << state_ << std::endl;
-#endif
+  KBACK_LOG_TRACE("TcpConnection::handleClose state=%d",
+                  static_cast<int>(state_));
   assert(state_ == kConnected || state_ == kDisconnecting);
   setState(kDisconnected);
   resetSendFileState();
@@ -341,48 +309,9 @@ void TcpConnection::handleClose() {
 void TcpConnection::handleError() {
   int err = sockets::getSocketError(channel_->fd());
   (void)err;
-#ifdef USE_STD_COUT
-  std::cout << "LOG_ERROR:   "
-            << "TcpConnection::handleError [" << name_
-            << "] - SO_ERROR = " << err << " " << std::endl;
-#endif
+  KBACK_LOG_ERROR("TcpConnection::handleError [%s] - SO_ERROR=%d",
+                  name_.c_str(), err);
 }
-
-#ifdef USE_EPOLL_LT
-#else
-// ET 模式下处理写事件
-ssize_t writeET(int fd, const char *begin, size_t len) {
-  ssize_t writesum = 0;
-  char *tbegin = (char *)begin;
-  for (;;) {
-    ssize_t n = ::write(fd, tbegin, len);
-    if (n > 0) {
-      writesum += n;
-      tbegin += n;
-      len -= n;
-      if (len == 0) {
-        return writesum;
-      }
-    } else if (n < 0) {
-      if (errno == EAGAIN) //系统缓冲区满，非阻塞返回
-      {
-#ifdef USE_STD_COUT
-        std::cout << "ET mode: errno == EAGAIN" << std::endl;
-#endif
-        break;
-      }
-      // 暂未考虑其他错误
-      else {
-        return -1;
-      }
-    } else {
-      // 返回0的情况，查看write的man，可以发现，一般是不会返回0的
-      return 0;
-    }
-  }
-  return writesum;
-}
-#endif
 
 void TcpConnection::sendFileInLoop() {
   loop_->assertInLoopThread();
@@ -404,10 +333,7 @@ void TcpConnection::sendFileInLoop() {
       return;
     }
 
-#ifdef USE_STD_COUT
-    std::cout << "LOG_SYSERR:   "
-              << "TcpConnection::sendFileInLoop" << std::endl;
-#endif
+    KBACK_LOG_SYSERR("TcpConnection::sendFileInLoop");
     handleError();
     resetSendFileState();
     return;

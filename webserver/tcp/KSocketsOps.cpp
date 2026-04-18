@@ -1,10 +1,10 @@
 #include "KSocketsOps.h"
 
+#include "webserver/utils/KAsyncLogger.h"
 #include "webserver/utils/KTypes.h"
 
 #include <fcntl.h>
 #include <cstdlib>
-#include <iostream>
 
 #include <errno.h>
 #include <stdio.h>
@@ -35,10 +35,7 @@ int sockets::createNonblockingOrDie() {
   int sockfd = ::socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK | SOCK_CLOEXEC,
                         IPPROTO_TCP);
   if (sockfd < 0) {
-#ifdef USE_STD_COUT
-    std::cout << "LOG_SYSFATAL:   "
-              << "sockets::createNonblockingOrDie" << std::endl;
-#endif
+    KBACK_LOG_SYSFATAL("sockets::createNonblockingOrDie");
     abortSyscall("socket");
   }
   return sockfd;
@@ -51,10 +48,7 @@ int sockets::connect(int sockfd, const struct sockaddr_in &addr) {
 void sockets::bindOrDie(int sockfd, const struct sockaddr_in &addr) {
   int ret = ::bind(sockfd, sockaddr_cast(&addr), sizeof addr);
   if (ret < 0) {
-#ifdef USE_STD_COUT
-    std::cout << "LOG_SYSFATAL:   "
-              << "sockets::bindOrDie" << std::endl;
-#endif
+    KBACK_LOG_SYSFATAL("sockets::bindOrDie");
     abortSyscall("bind");
   }
 }
@@ -62,10 +56,7 @@ void sockets::bindOrDie(int sockfd, const struct sockaddr_in &addr) {
 void sockets::listenOrDie(int sockfd) {
   int ret = ::listen(sockfd, SOMAXCONN);
   if (ret < 0) {
-#ifdef USE_STD_COUT
-    std::cout << "LOG_SYSFATAL:   "
-              << "sockets::listenOrDie" << std::endl;
-#endif
+    KBACK_LOG_SYSFATAL("sockets::listenOrDie");
     abortSyscall("listen");
   }
 }
@@ -77,10 +68,7 @@ int sockets::accept(int sockfd, struct sockaddr_in *addr) {
                          SOCK_NONBLOCK | SOCK_CLOEXEC);
   if (connfd < 0) {
     int savedErrno = errno;
-#ifdef USE_STD_COUT
-    std::cout << "LOG_SYSERR:   "
-              << "Socket::accept" << std::endl;
-#endif
+    KBACK_LOG_SYSERR("Socket::accept");
     switch (savedErrno) {
     case EAGAIN:
     case ECONNABORTED:
@@ -100,16 +88,10 @@ int sockets::accept(int sockfd, struct sockaddr_in *addr) {
     case ENOTSOCK:
     case EOPNOTSUPP:
 // unexpected errors
-#ifdef USE_STD_COUT
-      std::cout << "LOG_FATAL:   "
-                << "unexpected error of ::accept " << std::endl;
-#endif
+      KBACK_LOG_FATAL("unexpected error of ::accept");
       break;
     default:
-#ifdef USE_STD_COUT
-      std::cout << "LOG_FATAL:   "
-                << "unknown error of ::accept" << std::endl;
-#endif
+      KBACK_LOG_FATAL("unknown error of ::accept");
       break;
     }
   }
@@ -118,22 +100,14 @@ int sockets::accept(int sockfd, struct sockaddr_in *addr) {
 
 void sockets::close(int sockfd) {
   if (::close(sockfd) < 0) {
-#ifdef USE_STD_COUT
-    std::cout << "LOG_SYSERR:   "
-              << "sockets::close" << std::endl;
-#endif
+    KBACK_LOG_SYSERR("sockets::close");
   }
-#ifdef USE_STD_COUT
-  std::cout << "sockets::close " << sockfd << std::endl;
-#endif
+  KBACK_LOG_TRACE("sockets::close %d", sockfd);
 }
 
 void sockets::shutdownWrite(int sockfd) {
   if (::shutdown(sockfd, SHUT_WR) < 0) {
-#ifdef USE_STD_COUT
-    std::cout << "LOG_SYSERR:   "
-              << "sockets::shutdownWrite" << std::endl;
-#endif
+    KBACK_LOG_SYSERR("sockets::shutdownWrite");
   }
 }
 
@@ -150,10 +124,7 @@ void sockets::fromHostPort(const char *ip, uint16_t port,
   addr->sin_family = AF_INET;
   addr->sin_port = hostToNetwork16(port);
   if (::inet_pton(AF_INET, ip, &addr->sin_addr) <= 0) {
-#ifdef USE_STD_COUT
-    std::cout << "LOG_SYSERR:   "
-              << "sockets::fromHostPort" << std::endl;
-#endif
+    KBACK_LOG_SYSERR("sockets::fromHostPort");
     abortSyscall("inet_pton");
   }
 }
@@ -163,10 +134,7 @@ struct sockaddr_in sockets::getLocalAddr(int sockfd) {
   memZero(&localaddr, sizeof localaddr);
   socklen_t addrlen = sizeof(localaddr);
   if (::getsockname(sockfd, sockaddr_cast(&localaddr), &addrlen) < 0) {
-#ifdef USE_STD_COUT
-    std::cout << "LOG_SYSERR:   "
-              << "sockets::getLocalAddr" << std::endl;
-#endif
+    KBACK_LOG_SYSERR("sockets::getLocalAddr");
   }
   return localaddr;
 }
@@ -177,10 +145,7 @@ struct sockaddr_in sockets::getPeerAddr(int sockfd) {
   socklen_t addrlen = sizeof(peeraddr);
   //
   if (::getpeername(sockfd, sockaddr_cast(&peeraddr), &addrlen) < 0) {
-#ifdef USE_STD_COUT
-    std::cout << "LOG_SYSERR:   "
-              << "sockets::getPeerAddr" << std::endl;
-#endif
+    KBACK_LOG_SYSERR("sockets::getPeerAddr");
   }
   return peeraddr;
 }

@@ -17,7 +17,12 @@ option(WEBSERVER_USE_RINGBUFFER "Use the ring-buffer implementation" OFF)
 option(WEBSERVER_USE_LOCKFREEQUEUE "Use the lock-free functor queue" OFF)
 option(WEBSERVER_USE_SPINLOCK "Use spinlocks for pending functor protection" OFF)
 option(WEBSERVER_ENABLE_CONNECTION_RECYCLE "Reuse TcpConnection instances after close" OFF)
-option(WEBSERVER_ENABLE_STDOUT_LOGGING "Enable verbose stdout logging macros" OFF)
+option(WEBSERVER_ENABLE_ASYNC_FILE_LOGGING "Enable verbose async file logging macros" OFF)
+option(WEBSERVER_ENABLE_STDOUT_LOGGING "Deprecated alias for WEBSERVER_ENABLE_ASYNC_FILE_LOGGING" OFF)
+
+if(WEBSERVER_ENABLE_STDOUT_LOGGING)
+  set(WEBSERVER_ENABLE_ASYNC_FILE_LOGGING ON)
+endif()
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -33,13 +38,19 @@ set(WEBSERVER_PUBLIC_HEADERS
   webserver/lock/KSpinLock.h
   webserver/loop/KAsyncWaker.h
   webserver/loop/KEventLoop.h
+  webserver/loop/KPendingFunctorQueue.h
   webserver/loop/KEventLoopThread.h
   webserver/loop/KEventLoopThreadPool.h
   webserver/poller/KChannel.h
   webserver/poller/KEventManager.h
   webserver/tcp/KAcceptor.h
   webserver/tcp/KBuffer.h
+  webserver/tcp/KSelectedBuffer.h
+  webserver/tcp/KTcpIoMode.h
+  webserver/tcp/KTcpConnectionLifecycle.h
   webserver/tcp/KInetAddress.h
+  webserver/tcp/KTcpConnectionRecycler.h
+  webserver/tcp/KRecycledConnectionPool.h
   webserver/tcp/KRingBuffer.h
   webserver/tcp/KSocket.h
   webserver/tcp/KSocketsOps.h
@@ -48,6 +59,8 @@ set(WEBSERVER_PUBLIC_HEADERS
   webserver/thread/KThreadPool.h
   webserver/timer/KTimer.h
   webserver/utils/KCallbacks.h
+  webserver/utils/KAsyncLogger.h
+  webserver/utils/KBuildConfig.h
   webserver/utils/Kcopyable.h
   webserver/utils/Knoncopyable.h
   webserver/utils/KTimestamp.h
@@ -70,6 +83,7 @@ set(WEBSERVER_CORE_SOURCES
   webserver/tcp/KTcpServer.cpp
   webserver/thread/KThreadPool.cpp
   webserver/timer/KTimer.cpp
+  webserver/utils/KAsyncLogger.cpp
   webserver/utils/KTimestamp.cpp)
 
 set(WEBSERVER_HTTP_SOURCES
@@ -97,7 +111,7 @@ function(webserver_apply_target_settings target_name)
       $<$<BOOL:${WEBSERVER_USE_LOCKFREEQUEUE}>:USE_LOCKFREEQUEUE>
       $<$<BOOL:${WEBSERVER_USE_SPINLOCK}>:USE_SPINLOCK>
       $<$<BOOL:${WEBSERVER_ENABLE_CONNECTION_RECYCLE}>:USE_RECYCLE>
-      $<$<BOOL:${WEBSERVER_ENABLE_STDOUT_LOGGING}>:USE_STD_COUT>)
+      $<$<BOOL:${WEBSERVER_ENABLE_ASYNC_FILE_LOGGING}>:USE_ASYNC_FILE_LOGGING>)
 endfunction()
 
 add_library(webserver_core ${WEBSERVER_CORE_SOURCES} ${WEBSERVER_PUBLIC_HEADERS})

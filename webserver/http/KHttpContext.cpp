@@ -1,10 +1,5 @@
-#ifdef USE_RINGBUFFER
-#include "webserver/tcp/KRingBuffer.h"
-#else
-#include "webserver/tcp/KBuffer.h"
-#endif
-
 #include "KHttpContext.h"
+#include "webserver/tcp/KSelectedBuffer.h"
 #include <algorithm>
 
 using namespace kback;
@@ -43,61 +38,6 @@ bool HttpContext::processRequestLine(const char *begin, const char *end) {
   return succeed;
 }
 
-#ifdef USE_RINGBUFFER
-bool HttpContext::parseRequest(Buffer *buf, Timestamp receiveTime) {
-  const string str_buf = buf->bufferToString();
-  bool ok = true;
-  bool hasMore = true;
-  size_t start = 0;
-  size_t consumed = 0;
-  // 利用状态机转移，分三部分对请求报文进行解析
-  while (hasMore) {
-    if (state_ == kExpectRequestLine) {
-      const char *crlf =
-          std::search(str_buf.data() + start, str_buf.data() + str_buf.size(),
-                      kCRLF, kCRLF + 2);
-      if (crlf != str_buf.data() + str_buf.size()) {
-        ok = processRequestLine(str_buf.data() + start, crlf);
-        if (ok) {
-          request_.setReceiveTime(receiveTime);
-          start = static_cast<size_t>(crlf + 2 - str_buf.data());
-          consumed = start;
-          state_ = kExpectHeaders;
-        } else {
-          hasMore = false;
-        }
-      } else {
-        hasMore = false;
-      }
-    } else if (state_ == kExpectHeaders) {
-      const char *crlf =
-          std::search(str_buf.data() + start, str_buf.data() + str_buf.size(),
-                      kCRLF, kCRLF + 2);
-      if (crlf != str_buf.data() + str_buf.size()) {
-        const char *colon = std::find(str_buf.data() + start, crlf, ':');
-        if (colon != crlf) {
-          request_.addHeader(str_buf.data() + start, colon, crlf);
-        } else {
-          // 空行，头部解析完毕
-          state_ = kGotAll;
-          hasMore = false;
-        }
-        start = static_cast<size_t>(crlf + 2 - str_buf.data());
-        consumed = start;
-      } else {
-        hasMore = false;
-      }
-    } else if (state_ == kExpectBody) {
-      // 可以用于提取报文的主体部分
-    }
-  }
-  if (consumed > 0) {
-    buf->retrieve(consumed);
-  }
-  return ok;
-}
-
-#else
 // 解析http请求
 bool HttpContext::parseRequest(Buffer *buf, Timestamp receiveTime) {
   bool ok = true;
@@ -108,10 +48,19 @@ bool HttpContext::parseRequest(Buffer *buf, Timestamp receiveTime) {
     if (state_ == kExpectRequestLine) {
       const char *crlf = buf->findCRLF();
       if (crlf) {
-        ok = processRequestLine(buf->peek(), crlf);
+        const char *lineBegin = buf->peek();
+        const char *lineEnd = crlf;
+        std::string lineStorage;
+        if (!buf->isSpanContiguous(crlf)) {
+          lineStorage = buf->readableStringUntil(crlf);
+          lineBegin = lineStorage.data();
+          lineEnd = lineBegin + lineStorage.size();
+        }
+
+        ok = processRequestLine(lineBegin, lineEnd);
         if (ok) {
           request_.setReceiveTime(receiveTime);
-          buf->retrieveUntil(crlf + 2);
+          buf->retrieveLineAndCRLF(crlf);
           state_ = kExpectHeaders;
         } else {
           hasMore = false;
@@ -124,15 +73,24 @@ bool HttpContext::parseRequest(Buffer *buf, Timestamp receiveTime) {
     else if (state_ == kExpectHeaders) {
       const char *crlf = buf->findCRLF();
       if (crlf) {
-        const char *colon = std::find(buf->peek(), crlf, ':');
-        if (colon != crlf) {
-          request_.addHeader(buf->peek(), colon, crlf);
+        const char *lineBegin = buf->peek();
+        const char *lineEnd = crlf;
+        std::string lineStorage;
+        if (!buf->isSpanContiguous(crlf)) {
+          lineStorage = buf->readableStringUntil(crlf);
+          lineBegin = lineStorage.data();
+          lineEnd = lineBegin + lineStorage.size();
+        }
+
+        const char *colon = std::find(lineBegin, lineEnd, ':');
+        if (colon != lineEnd) {
+          request_.addHeader(lineBegin, colon, lineEnd);
         } else {
           // 空行，头部解析完毕
           state_ = kGotAll;
           hasMore = false;
         }
-        buf->retrieveUntil(crlf + 2);
+        buf->retrieveLineAndCRLF(crlf);
       } else {
         hasMore = false;
       }
@@ -142,4 +100,3 @@ bool HttpContext::parseRequest(Buffer *buf, Timestamp receiveTime) {
   }
   return ok;
 }
-#endif

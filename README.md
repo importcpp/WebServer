@@ -14,6 +14,15 @@ Enjoy it，it's gonna be really fun!!!
 - Complier: g++ 5.4.0
 - Tools: CMake/VScode
 
+## Docs
+
+更系统的源码与架构文档放在 `webserver/docs/` 目录下：
+
+- `webserver/docs/README.md`
+- `webserver/docs/architecture-guide.md`
+- `webserver/docs/wiki-code-architecture.md`
+- `webserver/docs/change-notes.md`
+
 ## Technical points
 
 * 基于Reactor模式构建网络服务器，编程风格偏向面向过程

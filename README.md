@@ -43,6 +43,15 @@ make runHttpServer MODE=release
 启用异步日志后，业务线程只负责格式化并入队，后台线程异步追加到日志文件。
 默认输出到当前目录下的 `webserver.log`，也可以通过环境变量 `WEBSERVER_LOG_FILE=/path/to/file.log` 指定路径。
 
+## Docs
+
+更详细的架构与源码文档放在 `webserver/docs/` 目录下：
+
+- `webserver/docs/README.md`
+- `webserver/docs/architecture-guide.md`
+- `webserver/docs/wiki-code-architecture.md`
+- `webserver/docs/change-notes.md`
+
 ## Technical points
 
 * 基于Reactor模式构建网络服务器，编程风格偏向面向过程

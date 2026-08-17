@@ -118,6 +118,7 @@ public:
     // 可以和std::copy对比下，看看哪个性能更高
     if (writerIndex_ < readerIndex_) {
       memcpy(beginWrite(), data, len);
+      writerIndex_ += len;
     } else {
       // 看看尾部预留的空间大小
       size_t reserve_tail = capacity_ - writerIndex_;

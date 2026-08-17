@@ -23,7 +23,7 @@ public:
   }
 
   ~Buffer() {
-    delete buffer_;
+    delete[] buffer_;
     buffer_ = nullptr;
     capacity_ = 0;
   }

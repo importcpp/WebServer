@@ -43,58 +43,11 @@ bool HttpContext::processRequestLine(const char *begin, const char *end) {
   return succeed;
 }
 
-#ifdef USE_RINGBUFFER
-bool HttpContext::parseRequest(Buffer *buf, Timestamp receiveTime) {
-  string str_buf = buf->retrieveAsString();
-  bool ok = true;
-  bool hasMore = true;
-  // 利用状态机转移，分三部分对请求报文进行解析
-  while (hasMore) {
-    int start = 0;
-    if (state_ == kExpectRequestLine) {
-      const char *crlf =
-          std::search(str_buf.data() + start, str_buf.data() + str_buf.size(),
-                      kCRLF, kCRLF + 2);
-      if (crlf) {
-        ok = processRequestLine(str_buf.data() + start, crlf);
-        if (ok) {
-          request_.setReceiveTime(receiveTime);
-          // buf->retrieveUntil(crlf + 2);
-          start = crlf + 2 - str_buf.data();
-          state_ = kExpectHeaders;
-        } else {
-          hasMore = false;
-        }
-      } else {
-        hasMore = false;
-      }
-    } else if (state_ == kExpectHeaders) {
-      const char *crlf =
-          std::search(str_buf.data() + start, str_buf.data() + str_buf.size(),
-                      kCRLF, kCRLF + 2);
-      if (crlf) {
-        const char *colon = std::find(str_buf.data() + start, crlf, ':');
-        if (colon != crlf) {
-          request_.addHeader(str_buf.data() + start, colon, crlf);
-        } else {
-          // 空行，头部解析完毕
-          state_ = kGotAll;
-          hasMore = false;
-        }
-        // buf->retrieveUntil(crlf + 2);
-        start = crlf + 2 - str_buf.data();
-      } else {
-        hasMore = false;
-      }
-    } else if (state_ == kExpectBody) {
-      // 可以用于提取报文的主体部分
-    }
-  }
-  return ok;
-}
-
-#else
 // 解析http请求
+// 线性 Buffer 与环形 RingBuffer 暴露一致的接口（findCRLF/peek/retrieveUntil），
+// 因此无需在 RINGBUFFER 模式下将整个缓冲区拷贝成 std::string 再解析，
+// 直接基于 Buffer 接口零拷贝解析，避免大请求时的 O(n) 拷贝开销，
+// 同时消除原先 string::data()+size() 非空指针导致 findCRLF 误判的问题。
 bool HttpContext::parseRequest(Buffer *buf, Timestamp receiveTime) {
   bool ok = true;
   bool hasMore = true;
@@ -138,4 +91,3 @@ bool HttpContext::parseRequest(Buffer *buf, Timestamp receiveTime) {
   }
   return ok;
 }
-#endif

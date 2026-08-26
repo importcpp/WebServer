@@ -124,8 +124,10 @@ ssize_t Buffer::writeFd(int fd, int *savedErrno) {
   ssize_t n = ::writev(fd, vec, 2);
   if (n > 0) {
     retrieve(n);
+  } else if (n < 0) {
+    *savedErrno = errno;
   }
-  return 0;
+  return n;
 }
 
 #ifdef USE_EPOLL_LT
